@@ -1,0 +1,52 @@
+steps:
+  - id: "Unlock access to Nexus"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        get_ip() {
+          curl http://icanhazip.com
+          res=$?
+          if [ "$res" != "0" ]; then
+            curl http://eth0.me
+          fi
+        }
+        ip=$(get_ip)
+        echo $ip | xargs -i gcloud pubsub topics publish cloud-builds --message "{\"id\": \"$BUILD_ID\", \"status\": \"STARTING\", \"external_ip\": \"{}\" }"
+    waitFor: ['-']
+  - id: "Build Maven"
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    dir: 'app/server'
+    args:
+      - '-eEuo'
+      - 'pipefail'
+      - '-c'
+      - |-
+        apt update
+        apt install -y rsync maven
+        ./build.sh -DskipTests
+  - id: "Build image"
+    name: "gcr.io/cloud-builders/docker"
+    dir: 'app/server'
+    args:
+      [
+          "build",
+          "-t",
+          "eu.gcr.io/talent-alpha-core-infra/appsmith:prod",
+          ".",
+      ]
+  - id: "Push image"
+    name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+          "push",
+          "eu.gcr.io/talent-alpha-core-infra/appsmith:prod",
+      ]
+
+timeout: 3600s
+images:
+- eu.gcr.io/talent-alpha-core-infra/appsmith:prod
+
+
