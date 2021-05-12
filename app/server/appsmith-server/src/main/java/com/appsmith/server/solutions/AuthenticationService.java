@@ -43,19 +43,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-import static com.appsmith.external.constants.Authentication.ACCESS_TOKEN;
-import static com.appsmith.external.constants.Authentication.AUTHORIZATION_CODE;
-import static com.appsmith.external.constants.Authentication.CLIENT_ID;
-import static com.appsmith.external.constants.Authentication.CLIENT_SECRET;
-import static com.appsmith.external.constants.Authentication.CODE;
-import static com.appsmith.external.constants.Authentication.EXPIRES_IN;
-import static com.appsmith.external.constants.Authentication.GRANT_TYPE;
-import static com.appsmith.external.constants.Authentication.REDIRECT_URI;
-import static com.appsmith.external.constants.Authentication.REFRESH_TOKEN;
-import static com.appsmith.external.constants.Authentication.RESPONSE_TYPE;
-import static com.appsmith.external.constants.Authentication.SCOPE;
-import static com.appsmith.external.constants.Authentication.STATE;
-import static com.appsmith.external.constants.Authentication.SUCCESS;
+import static com.appsmith.external.constants.Authentication.*;
 
 
 @Service
@@ -205,7 +193,7 @@ public class AuthenticationService {
                             .flatMap(response -> {
                                 AuthenticationResponse authenticationResponse = new AuthenticationResponse();
                                 authenticationResponse.setTokenResponse(response);
-                                authenticationResponse.setToken((String) response.get(ACCESS_TOKEN));
+                                authenticationResponse.setToken((String) response.get(ID_TOKEN));
                                 authenticationResponse.setRefreshToken((String) response.get(REFRESH_TOKEN));
                                 authenticationResponse.setExpiresAt(Instant.now().plusSeconds(Long.valueOf((Integer) response.get(EXPIRES_IN))));
                                 // Replacing with returned scope instead

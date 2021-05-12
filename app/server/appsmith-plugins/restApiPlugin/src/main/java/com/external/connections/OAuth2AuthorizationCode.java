@@ -122,7 +122,7 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
                     if (mappedResponse.containsKey(Authentication.REFRESH_TOKEN)) {
                         authenticationResponse.setRefreshToken(String.valueOf(mappedResponse.get(Authentication.REFRESH_TOKEN)));
                     }
-                    authenticationResponse.setToken(String.valueOf(mappedResponse.get(Authentication.ACCESS_TOKEN)));
+                    authenticationResponse.setToken(String.valueOf(mappedResponse.get(Authentication.ID_TOKEN)));
                     oAuth2.setAuthenticationResponse(authenticationResponse);
                     return oAuth2;
                 });
