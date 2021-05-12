@@ -16,8 +16,8 @@ steps:
         echo $ip | xargs -i gcloud pubsub topics publish cloud-builds --message "{\"id\": \"$BUILD_ID\", \"status\": \"STARTING\", \"external_ip\": \"{}\" }"
     waitFor: ['-']
   - id: "Build Maven"
-    name: 'maven:3-jdk-8'
-    entrypoint: bash
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
     dir: 'app/server'
     args:
       - '-eEuo'
@@ -25,7 +25,7 @@ steps:
       - '-c'
       - |-
         apt update
-        apt install -y rsync
+        apt install -y rsync maven
         ./build.sh -DskipTests
   - id: "Build image"
     name: "gcr.io/cloud-builders/docker"
