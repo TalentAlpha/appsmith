@@ -120,6 +120,10 @@ public class RestApiPlugin extends BasePlugin {
                                                                 DatasourceConfiguration datasourceConfiguration,
                                                                 ActionConfiguration actionConfiguration) {
 
+            System.out.println("SELF DEBUG: executeParameterized 1: " + datasourceConfiguration);
+            APIConnection connection_x = this.datasourceCreate(datasourceConfiguration).block();
+            System.out.println("SELF DEBUG: executeParameterized 2: " + datasourceConfiguration.getAuthentication());
+
             Boolean smartJsonSubstitution;
             final List<Property> properties = actionConfiguration.getPluginSpecifiedTemplates();
             List<Map.Entry<String, String>> parameters = new ArrayList<>();
@@ -191,7 +195,7 @@ public class RestApiPlugin extends BasePlugin {
                 actionConfiguration.setHeaders(headerList);
             }
 
-            return this.executeCommon(connection, datasourceConfiguration, actionConfiguration, parameters);
+            return this.executeCommon(connection_x, datasourceConfiguration, actionConfiguration, parameters);
         }
 
         public Mono<ActionExecutionResult> executeCommon(APIConnection apiConnection,

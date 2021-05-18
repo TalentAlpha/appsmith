@@ -49,6 +49,7 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
         if (oAuth2 == null) {
             return Mono.empty();
         }
+        System.out.println("SELF DEBUG: OAuth2AuthorizationCode.create() 1");
         // Create OAuth2Connection
         OAuth2AuthorizationCode connection = new OAuth2AuthorizationCode();
 
@@ -61,13 +62,15 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
                 .filter(x -> {
                     Instant now = connection.clock.instant();
                     Instant expiresAt = x.getAuthenticationResponse().getExpiresAt();
-
+                    System.out.println("SELF DEBUG: OAuth2AuthorizationCode.create() 2: " + now.isBefore(expiresAt.minus(Duration.ofMinutes(1))));
                     return now.isBefore(expiresAt.minus(Duration.ofMinutes(1)));
                 })
                 // If invalid, regenerate token
                 .switchIfEmpty(connection.generateOAuth2Token(oAuth2))
                 // Store valid token
                 .flatMap(token -> {
+                    System.out.println("SELF DEBUG: OAuth2AuthorizationCode.create() 3: " + token.getAuthenticationResponse().getToken());
+                    System.out.println("SELF DEBUG: OAuth2AuthorizationCode.create() 4: " + connection.generateOAuth2Token(oAuth2));
                     connection.setToken(token.getAuthenticationResponse().getToken());
                     connection.setHeader(token.getIsTokenHeader());
                     connection.setHeaderPrefix(token.getHeaderPrefix());
@@ -79,6 +82,7 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
     }
 
     private Mono<OAuth2> generateOAuth2Token(OAuth2 oAuth2) {
+        System.out.println("SELF DEBUG: generateOAuth2Token 1");
         // Webclient
         WebClient webClient = WebClient.builder()
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -97,6 +101,7 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
                 .flatMap(response -> response.body(BodyExtractors.toMono(Map.class)))
                 // Receive and parse response
                 .map(mappedResponse -> {
+                    System.out.println("SELF DEBUG: generateOAuth2Token 2: " + mappedResponse);
                     AuthenticationResponse authenticationResponse = new AuthenticationResponse();
                     // Store received response as is for reference
                     authenticationResponse.setTokenResponse(mappedResponse);
@@ -122,6 +127,8 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
                     if (mappedResponse.containsKey(Authentication.REFRESH_TOKEN)) {
                         authenticationResponse.setRefreshToken(String.valueOf(mappedResponse.get(Authentication.REFRESH_TOKEN)));
                     }
+
+                    System.out.println("SELF DEBUG: generateOAuth2Token 3: " + String.valueOf(mappedResponse.get(Authentication.ID_TOKEN)));
                     authenticationResponse.setToken(String.valueOf(mappedResponse.get(Authentication.ID_TOKEN)));
                     oAuth2.setAuthenticationResponse(authenticationResponse);
                     return oAuth2;
@@ -151,6 +158,7 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
             final String finalHeaderPrefix = this.getHeaderPrefix() != null && !this.getHeaderPrefix().isBlank() ?
                     this.getHeaderPrefix().trim() + " "
                     : "";
+            System.out.println("SELF DEBUG: addTokenToRequest: " + this.getToken());
             return Mono.justOrEmpty(ClientRequest.from(clientRequest)
                     .headers(headers -> headers.set("Authorization", finalHeaderPrefix + this.getToken()))
                     .build());

@@ -72,6 +72,7 @@ public class UserSignup {
                     final SecurityContext securityContext = tuple.getT3();
 
                     Authentication authentication = new UsernamePasswordAuthenticationToken(savedUser, null, savedUser.getAuthorities());
+                    System.out.println("SELF DEBUG: signupAndLogin 1: " + authentication);
                     securityContext.setAuthentication(authentication);
                     session.getAttributes().put(DEFAULT_SPRING_SECURITY_CONTEXT_ATTR_NAME, securityContext);
 

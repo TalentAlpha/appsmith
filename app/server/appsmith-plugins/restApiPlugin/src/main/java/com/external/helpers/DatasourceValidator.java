@@ -10,11 +10,13 @@ import java.util.Set;
 public class DatasourceValidator {
 
     public static Set<String> validateAuthentication(AuthenticationDTO authenticationDTO) {
-
+        System.out.println("SELF DEBUG: validateAuthentication");
         if (authenticationDTO instanceof OAuth2) {
             if (OAuth2.Type.CLIENT_CREDENTIALS.equals(((OAuth2) authenticationDTO).getGrantType())) {
+                System.out.println("SELF DEBUG: validateAuthentication 1");
                 return validateClientCredentials((OAuth2) authenticationDTO);
             } else if (OAuth2.Type.AUTHORIZATION_CODE.equals(((OAuth2) authenticationDTO).getGrantType())) {
+                System.out.println("SELF DEBUG: validateAuthentication 2");
                 return validateAuthorizationCode((OAuth2) authenticationDTO);
             } else {
                 return Set.of();

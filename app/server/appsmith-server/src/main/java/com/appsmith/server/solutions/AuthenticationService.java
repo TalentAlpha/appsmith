@@ -371,53 +371,62 @@ public class AuthenticationService {
     }
 
     public Mono<Datasource> refreshAuthentication(Datasource datasource) {
+        System.out.println("SELF DEBUG: refreshAuthentication");
         // This method will always be called from a point where these validations have been performed
         assert (datasource != null &&
                 datasource.getDatasourceConfiguration() != null &&
                 datasource.getDatasourceConfiguration().getAuthentication() instanceof OAuth2);
+        System.out.println("SELF DEBUG: refreshAuthentication 1");
         OAuth2 oAuth2 = (OAuth2) datasource.getDatasourceConfiguration().getAuthentication();
-        return pluginService.findById(datasource.getPluginId())
-                .filter(plugin -> PluginType.SAAS.equals(plugin.getType()))
-                .zipWith(configService.getInstanceId())
-                .flatMap(tuple -> {
-                    Plugin plugin = tuple.getT1();
-                    String installationKey = tuple.getT2();
-                    IntegrationDTO integrationDTO = new IntegrationDTO();
-                    integrationDTO.setInstallationKey(installationKey);
-                    integrationDTO.setAuthenticationResponse(oAuth2.getAuthenticationResponse());
-                    integrationDTO.setScope(oAuth2.getScope());
-                    integrationDTO.setPluginName(plugin.getPackageName());
 
-                    WebClient.Builder builder = WebClient
-                            .builder()
-                            .baseUrl(cloudServicesConfig.getBaseUrl() + "/api/v1/integrations/oauth/refresh");
-
-                    return builder.build()
-                            .method(HttpMethod.POST)
-                            .body(BodyInserters.fromValue(integrationDTO))
-                            .exchange()
-                            .doOnError(e -> Mono.error(new AppsmithPluginException(AppsmithPluginError.PLUGIN_ERROR, e)))
-                            .flatMap(response -> {
-                                if (response.statusCode().is2xxSuccessful()) {
-                                    return response.bodyToMono(AuthenticationResponse.class);
-                                } else {
-                                    log.debug("Unable to retrieve appsmith token with error {}", response.statusCode());
-                                    return Mono.error(new AppsmithException(AppsmithError.AUTHENTICATION_FAILURE,
-                                            response.statusCode()));
-                                }
-                            })
-                            .flatMap(authenticationResponse -> {
-                                oAuth2.setAuthenticationResponse(authenticationResponse);
-                                oAuth2.setIsEncrypted(null);
-                                datasource.getDatasourceConfiguration().setAuthentication(oAuth2);
-                                return datasourceService.update(datasource.getId(), datasource);
-                            });
-                })
-                .switchIfEmpty(Mono.just(datasource))
-                .onErrorMap(ConnectException.class,
-                        error -> new AppsmithException(
-                                AppsmithError.AUTHENTICATION_FAILURE,
-                                "Unable to connect to Appsmith authentication server."
-                        ));
+        System.out.println("SELF DEBUG: refreshAuthentication 2: " + oAuth2.getAuthenticationResponse());
+        return Mono.just(datasource);
+//        return pluginService.findById(datasource.getPluginId())
+//                .filter(plugin -> PluginType.SAAS.equals(plugin.getType()))
+//                .zipWith(configService.getInstanceId())
+//                .flatMap(tuple -> {
+//                    Plugin plugin = tuple.getT1();
+//                    String installationKey = tuple.getT2();
+//                    IntegrationDTO integrationDTO = new IntegrationDTO();
+//                    integrationDTO.setInstallationKey(installationKey);
+//                    System.out.println("SELF DEBUG: refreshAuthentication 2: " + oAuth2.getAuthenticationResponse());
+//                    integrationDTO.setAuthenticationResponse(oAuth2.getAuthenticationResponse());
+//                    integrationDTO.setScope(oAuth2.getScope());
+//                    integrationDTO.setPluginName(plugin.getPackageName());
+//
+//                    WebClient.Builder builder = WebClient
+//                            .builder()
+//                            .baseUrl(cloudServicesConfig.getBaseUrl() + "/api/v1/integrations/oauth/refresh");
+//
+//                    return builder.build()
+//                            .method(HttpMethod.POST)
+//                            .body(BodyInserters.fromValue(integrationDTO))
+//                            .exchange()
+//                            .doOnError(e -> Mono.error(new AppsmithPluginException(AppsmithPluginError.PLUGIN_ERROR, e)))
+//                            .flatMap(response -> {
+//                                if (response.statusCode().is2xxSuccessful()) {
+//                                    return response.bodyToMono(AuthenticationResponse.class);
+//                                } else {
+//                                    log.debug("Unable to retrieve appsmith token with error {}", response.statusCode());
+//                                    return Mono.error(new AppsmithException(AppsmithError.AUTHENTICATION_FAILURE,
+//                                            response.statusCode()));
+//                                }
+//                            })
+//                            .flatMap(authenticationResponse -> {
+//                                System.out.println("SELF DEBUG: refreshAuthentication 3: " + authenticationResponse);
+//                                System.out.println("SELF DEBUG: refreshAuthentication 4: " + oAuth2);
+//                                oAuth2.setAuthenticationResponse(authenticationResponse);
+//                                oAuth2.setIsEncrypted(null);
+//                                System.out.println("SELF DEBUG: refreshAuthentication 5: " + oAuth2);
+//                                datasource.getDatasourceConfiguration().setAuthentication(oAuth2);
+//                                return datasourceService.update(datasource.getId(), datasource);
+//                            });
+//                })
+//                .switchIfEmpty(Mono.just(datasource))
+//                .onErrorMap(ConnectException.class,
+//                        error -> new AppsmithException(
+//                                AppsmithError.AUTHENTICATION_FAILURE,
+//                                "Unable to connect to Appsmith authentication server."
+//                        ));
     }
 }
