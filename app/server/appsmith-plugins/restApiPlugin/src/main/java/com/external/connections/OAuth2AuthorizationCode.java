@@ -62,7 +62,8 @@ public class OAuth2AuthorizationCode extends APIConnection implements UpdatableC
                     Instant now = connection.clock.instant();
                     Instant expiresAt = x.getAuthenticationResponse().getExpiresAt();
 
-                    return now.isBefore(expiresAt.minus(Duration.ofMinutes(1)));
+//                    return now.isBefore(expiresAt.minus(Duration.ofMinutes(1)));
+                    return false;
                 })
                 // If invalid, regenerate token
                 .switchIfEmpty(connection.generateOAuth2Token(oAuth2))

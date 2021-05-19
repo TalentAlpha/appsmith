@@ -19,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * This class is invoked for SSO logins like <strong>Google</strong> which implement the {@link OAuth2User} interface for the user.
  * We transform the {@link OAuth2User} object to {@link User} object via the {@link #loadUser(OidcUserRequest)}
@@ -66,6 +69,7 @@ public class CustomOidcUserServiceImpl extends OidcReactiveOAuth2UserService
                     newUser.setSource(loginSource);
                     newUser.setState(UserState.ACTIVATED);
                     newUser.setIsEnabled(true);
+                    newUser.setTokenId(oidcUser.getIdToken().getTokenValue());
 
                     return userService.create(newUser);
                 }))
@@ -74,6 +78,7 @@ public class CustomOidcUserServiceImpl extends OidcReactiveOAuth2UserService
                         user.setIsEnabled(true);
                         return repository.save(user);
                     }
+                    user.setTokenId(oidcUser.getIdToken().getTokenValue());
                     return Mono.just(user);
                 })
                 .onErrorMap(

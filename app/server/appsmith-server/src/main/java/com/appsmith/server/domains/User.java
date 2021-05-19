@@ -53,6 +53,8 @@ public class User extends BaseDomain implements UserDetails, OidcUser {
 
     private String examplesOrganizationId;
 
+    private String tokenId;
+
     // There is a many-to-many relationship with groups. If this value is modified, please also modify the list of
     // users in that particular group document as well.
     private Set<String> groupIds = new HashSet<>();
@@ -111,7 +113,10 @@ public class User extends BaseDomain implements UserDetails, OidcUser {
     // TODO: Check the return value for the functions below to ensure that correct values are being returned
     @Override
     public Map<String, Object> getClaims() {
-        return new HashMap<>();
+        String token = this.getTokenId();
+        return new HashMap<>(){{
+            put("id_token", token);
+        }};
     }
 
     @Override
