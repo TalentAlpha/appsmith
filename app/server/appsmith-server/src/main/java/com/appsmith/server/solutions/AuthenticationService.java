@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.appsmith.external.constants.Authentication.ACCESS_TOKEN;
+import static com.appsmith.external.constants.Authentication.ID_TOKEN;
 import static com.appsmith.external.constants.Authentication.AUDIENCE;
 import static com.appsmith.external.constants.Authentication.AUTHORIZATION_CODE;
 import static com.appsmith.external.constants.Authentication.CLIENT_ID;
