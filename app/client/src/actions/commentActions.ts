@@ -247,3 +247,16 @@ export const setAreCommentsEnabled = (flag: boolean) => ({
   type: ReduxActionTypes.SET_ARE_COMMENTS_ENABLED,
   payload: flag,
 });
+
+export const fetchUnreadCommentThreadsCountSuccess = (count?: number) => ({
+  type: ReduxActionTypes.FETCH_UNREAD_COMMENT_THREADS_COUNT_SUCCESS,
+  payload: count,
+});
+
+export const incrementThreadUnreadCount = () => ({
+  type: ReduxActionTypes.INCREMENT_COMMENT_THREAD_UNREAD_COUNT,
+});
+
+export const decrementThreadUnreadCount = () => ({
+  type: ReduxActionTypes.DECREMENT_COMMENT_THREAD_UNREAD_COUNT,
+});

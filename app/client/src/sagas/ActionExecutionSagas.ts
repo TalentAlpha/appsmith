@@ -45,6 +45,7 @@ import {
   getApplicationViewerPageURL,
   QUERIES_EDITOR_ID_URL,
   QUERIES_EDITOR_URL,
+  INTEGRATION_EDITOR_URL,
 } from "constants/routes";
 import {
   executeApiActionRequest,
@@ -79,7 +80,8 @@ import {
 } from "actions/pageActions";
 import { getAppStoreName } from "constants/AppConstants";
 import downloadjs from "downloadjs";
-import { getType, Types } from "utils/TypeHelpers";
+import Axios from "axios";
+import { getType, isURL, Types } from "utils/TypeHelpers";
 import { Toaster } from "components/ads/Toast";
 import { Variant } from "components/ads/common";
 import PerformanceTracker, {
@@ -115,6 +117,7 @@ import AppsmithConsole from "utils/AppsmithConsole";
 import { ENTITY_TYPE } from "entities/AppsmithConsole";
 import LOG_TYPE from "entities/AppsmithConsole/logtype";
 import { matchPath } from "react-router";
+import { setDataUrl } from "./PageSagas";
 
 export enum NavigationTargetType {
   SAME_WINDOW = "SAME_WINDOW",
@@ -154,6 +157,7 @@ function* navigateActionSaga(
     (page: Page) => page.pageName === pageNameOrUrl,
   );
   if (page) {
+    const currentPageId = yield select(getCurrentPageId);
     AnalyticsUtil.logEvent("NAVIGATE", {
       pageName: pageNameOrUrl,
       pageParams: params,
@@ -165,6 +169,9 @@ function* navigateActionSaga(
         : getApplicationViewerPageURL(applicationId, page.pageId, params);
     if (target === NavigationTargetType.SAME_WINDOW) {
       history.push(path);
+      if (currentPageId === page.pageId) {
+        yield call(setDataUrl);
+      }
     } else if (target === NavigationTargetType.NEW_WINDOW) {
       window.open(path, "_blank");
     }
@@ -258,6 +265,29 @@ async function downloadSaga(
       AppsmithConsole.info({
         text: `download('${jsonString}', '${name}', '${type}') was triggered`,
       });
+    } else if (
+      dataType === Types.STRING &&
+      isURL(data) &&
+      type === "application/x-binary"
+    ) {
+      // Requires a special handling for the use case when the user is trying to download a binary file from a URL
+      // due to incompatibility in the downloadjs library. In this case we are going to fetch the file from the URL
+      // using axios with the arraybuffer header and then pass it to the downloadjs library.
+      Axios.get(data, { responseType: "arraybuffer" })
+        .then((res) => {
+          downloadjs(res.data, name, type);
+          AppsmithConsole.info({
+            text: `download('${data}', '${name}', '${type}') was triggered`,
+          });
+        })
+        .catch((error) => {
+          log.error(error);
+          Toaster.show({
+            text: createMessage(ERROR_WIDGET_DOWNLOAD, error),
+            variant: Variant.danger,
+          });
+          if (event.callback) event.callback({ success: false });
+        });
     } else {
       downloadjs(data, name, type);
       AppsmithConsole.info({
@@ -534,7 +564,7 @@ export function* executeActionSaga(
           id: actionId,
         },
         state: response.data?.request ?? null,
-        message: payload.body as string,
+        messages: [{ message: payload.body as string }],
       });
       PerformanceTracker.stopAsyncTracking(
         PerformanceTransactionName.EXECUTE_ACTION,
@@ -719,6 +749,7 @@ function* runActionShortcutSaga() {
       QUERIES_EDITOR_URL(),
       QUERIES_EDITOR_ID_URL(),
       API_EDITOR_URL_WITH_SELECTED_PAGE_ID(),
+      INTEGRATION_EDITOR_URL(),
     ],
     exact: true,
     strict: false,
@@ -872,9 +903,13 @@ function* runActionSaga(
             name: actionObject.name,
             id: actionId,
           },
-          message: !isString(payload.body)
-            ? JSON.stringify(payload.body)
-            : payload.body,
+          messages: [
+            {
+              message: !isString(payload.body)
+                ? JSON.stringify(payload.body)
+                : payload.body,
+            },
+          ],
           state: response.data?.request ?? null,
         });
 
@@ -983,7 +1018,7 @@ function* executePageLoadAction(pageAction: PageAction) {
           id: pageAction.id,
         },
         state: response.data?.request ?? null,
-        message: JSON.stringify(body),
+        messages: [{ message: JSON.stringify(body) }],
       });
 
       yield put(

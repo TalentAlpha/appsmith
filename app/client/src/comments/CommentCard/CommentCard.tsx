@@ -52,6 +52,8 @@ import { Variant } from "components/ads/common";
 import TourTooltipWrapper from "components/ads/tour/TourTooltipWrapper";
 import { TourType } from "entities/Tour";
 import { getCurrentApplicationId } from "selectors/editorSelectors";
+import useProceedToNextTourStep from "utils/hooks/useProceedToNextTourStep";
+import { commentsTourStepsEditModeTypes } from "comments/tour/commentsTourSteps";
 
 const StyledContainer = styled.div`
   width: 100%;
@@ -202,17 +204,27 @@ const reduceReactions = (
     (Array.isArray(reactions) &&
       reactions.reduce(
         (res: Record<string, ComponentReaction>, reaction: Reaction) => {
-          const { byUsername, emoji } = reaction;
+          const { byName, byUsername, emoji } = reaction;
+          const sameAsCurrent = byUsername === username;
+          const name = byName || byUsername;
           if (res[reaction.emoji]) {
             res[reaction.emoji].count++;
+            if (!sameAsCurrent) {
+              res[reaction.emoji].users = [
+                ...(res[reaction.emoji].users || []),
+                name,
+              ];
+            }
           } else {
+            const users = !sameAsCurrent ? [name] : [];
             res[emoji] = {
               count: 1,
               reactionEmoji: emoji,
+              users,
             } as ComponentReaction;
           }
 
-          if (byUsername === username) {
+          if (sameAsCurrent) {
             res[reaction.emoji].active = true;
           }
 
@@ -254,6 +266,10 @@ function CommentCard({
   inline?: boolean;
   visible?: boolean;
 }) {
+  const proceedToNextTourStep = useProceedToNextTourStep({
+    [TourType.COMMENTS_TOUR_EDIT_MODE]: commentsTourStepsEditModeTypes.RESOLVE,
+  });
+
   const [isHovered, setIsHovered] = useState(false);
   const [cardMode, setCardMode] = useState(CommentCardModes.VIEW);
   const dispatch = useDispatch();
@@ -418,11 +434,16 @@ function CommentCard({
               <ResolveButtonContainer>
                 {inline ? (
                   <TourTooltipWrapper
-                    tourIndex={2}
-                    tourType={TourType.COMMENTS_TOUR}
+                    activeStepConfig={{
+                      [TourType.COMMENTS_TOUR_EDIT_MODE]:
+                        commentsTourStepsEditModeTypes.RESOLVE,
+                    }}
                   >
                     <ResolveCommentButton
-                      handleClick={toggleResolved as () => void}
+                      handleClick={() => {
+                        toggleResolved && toggleResolved();
+                        proceedToNextTourStep();
+                      }}
                       resolved={!!resolved}
                     />
                   </TourTooltipWrapper>
