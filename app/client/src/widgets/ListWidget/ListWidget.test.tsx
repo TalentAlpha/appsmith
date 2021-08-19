@@ -44,9 +44,6 @@ describe("<ListWidget />", () => {
       listData: [],
       version: 16,
       disablePropertyPane: false,
-      updateWidgetMetaProperty: () => {
-        //
-      },
       ...props,
     };
     // Mock store to bypass the error of react-redux

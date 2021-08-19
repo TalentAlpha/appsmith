@@ -1,13 +1,13 @@
 import { createReducer } from "../../utils/AppsmithUtils";
 import {
-  ReduxActionErrorTypes,
+  ReduxActionTypes,
   ReduxAction,
 } from "../../constants/ReduxActionConstants";
 
 export type JSExecutionRecord = Record<string, string>;
 const initialState: JSExecutionRecord = {};
 const jsExecutionsReducer = createReducer(initialState, {
-  [ReduxActionErrorTypes.SAVE_JS_EXECUTION_RECORD]: (
+  [ReduxActionTypes.SAVE_JS_EXECUTION_RECORD]: (
     state: JSExecutionRecord,
     action: ReduxAction<JSExecutionRecord>,
   ) => {

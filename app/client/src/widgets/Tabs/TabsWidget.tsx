@@ -3,10 +3,7 @@ import TabsComponent from "components/designSystems/appsmith/TabsComponent";
 import { WidgetType, WidgetTypes } from "constants/WidgetConstants";
 import BaseWidget, { WidgetProps, WidgetState } from "../BaseWidget";
 import WidgetFactory from "utils/WidgetFactory";
-import {
-  ValidationResponse,
-  ValidationTypes,
-} from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import _ from "lodash";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
 import { WidgetOperations } from "widgets/BaseWidget";
@@ -14,23 +11,7 @@ import * as Sentry from "@sentry/react";
 import { generateReactKey } from "utils/generators";
 import withMeta, { WithMeta } from "../MetaHOC";
 import { GRID_DENSITY_MIGRATION_V1 } from "mockResponses/WidgetConfigResponse";
-import { AutocompleteDataType } from "utils/autocomplete/TernServer";
 
-export function selectedTabValidation(
-  value: unknown,
-  props: TabContainerWidgetProps,
-): ValidationResponse {
-  const tabs: Array<{
-    label: string;
-    id: string;
-  }> = props.tabsObj ? Object.values(props.tabsObj) : props.tabs || [];
-  const tabNames = tabs.map((i: { label: string; id: string }) => i.label);
-  return {
-    isValid: tabNames.includes(value as string),
-    parsed: value,
-    message: `Tab name ${value} does not exist`,
-  };
-}
 class TabsWidget extends BaseWidget<
   TabsWidgetProps<TabContainerWidgetProps>,
   WidgetState
@@ -76,7 +57,7 @@ class TabsWidget extends BaseWidget<
                       isJSConvertible: true,
                       isBindProperty: true,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.BOOLEAN },
+                      validation: VALIDATION_TYPES.BOOLEAN,
                     },
                   ],
                 },
@@ -91,18 +72,7 @@ class TabsWidget extends BaseWidget<
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.FUNCTION,
-              params: {
-                fn: selectedTabValidation,
-                expected: {
-                  type: "Tab Name (string)",
-                  example: "Tab 1",
-                  autocompleteDataType: AutocompleteDataType.STRING,
-                },
-              },
-            },
-            dependencies: ["tabsObj", "tabs"],
+            validation: VALIDATION_TYPES.SELECTED_TAB,
           },
           {
             propertyName: "shouldShowTabs",
@@ -128,7 +98,7 @@ class TabsWidget extends BaseWidget<
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },

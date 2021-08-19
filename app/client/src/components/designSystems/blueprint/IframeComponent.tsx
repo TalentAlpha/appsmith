@@ -1,11 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 
 import { ComponentProps } from "components/designSystems/appsmith/BaseComponent";
 import { hexToRgba } from "components/ads/common";
-import { AppState } from "reducers";
-import { useSelector } from "store";
-import { RenderMode, RenderModes } from "constants/WidgetConstants";
 
 interface IframeContainerProps {
   borderColor?: string;
@@ -14,14 +11,7 @@ interface IframeContainerProps {
 }
 
 export const IframeContainer = styled.div<IframeContainerProps>`
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   height: 100%;
-  background-color: #ffffff;
-  font-weight: bold;
-
   iframe {
     width: 100%;
     height: 100%;
@@ -38,16 +28,7 @@ export const IframeContainer = styled.div<IframeContainerProps>`
   }
 `;
 
-const OverlayDiv = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-`;
-
 export interface IframeComponentProps extends ComponentProps {
-  renderMode: RenderMode;
   source: string;
   title?: string;
   onURLChanged: (url: string) => void;
@@ -64,13 +45,9 @@ function IframeComponent(props: IframeComponentProps) {
     borderWidth,
     onMessageReceived,
     onURLChanged,
-    renderMode,
     source,
     title,
-    widgetId,
   } = props;
-
-  const [message, setMessage] = useState("");
 
   useEffect(() => {
     // add a listener
@@ -82,19 +59,7 @@ function IframeComponent(props: IframeComponentProps) {
 
   useEffect(() => {
     onURLChanged(source);
-    if (!source) {
-      setMessage("Valid source url is required");
-    } else {
-      setMessage("");
-    }
   }, [source]);
-
-  const isPropertyPaneVisible = useSelector(
-    (state: AppState) => state.ui.propertyPane.isVisible,
-  );
-  const selectedWidgetId = useSelector(
-    (state: AppState) => state.ui.propertyPane.widgetId,
-  );
 
   return (
     <IframeContainer
@@ -102,12 +67,7 @@ function IframeComponent(props: IframeComponentProps) {
       borderOpacity={borderOpacity}
       borderWidth={borderWidth}
     >
-      {renderMode === RenderModes.CANVAS &&
-        !(isPropertyPaneVisible && widgetId === selectedWidgetId) && (
-          <OverlayDiv />
-        )}
-
-      {message ? message : <iframe src={source} title={title} />}
+      <iframe src={source} title={title} />
     </IframeContainer>
   );
 }

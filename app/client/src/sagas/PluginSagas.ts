@@ -17,7 +17,6 @@ import { Plugin } from "api/PluginApi";
 import {
   fetchPluginFormConfigsSuccess,
   fetchPluginFormConfigSuccess,
-  fetchPluginFormConfigError,
 } from "actions/pluginActions";
 import {
   defaultActionDependenciesConfig,
@@ -152,18 +151,7 @@ export function* checkAndGetPluginFormConfigsSaga(pluginId: string) {
     }
   } catch (e) {
     log.error("Failed to get plugin form");
-    yield put(
-      fetchPluginFormConfigError({
-        id: pluginId,
-      }),
-    );
   }
-}
-
-type GetPluginFormConfigParams = { id: string; type: string };
-
-function* getPluginFormConfig({ id }: GetPluginFormConfigParams) {
-  yield call(checkAndGetPluginFormConfigsSaga, id);
 }
 
 function* root() {
@@ -172,10 +160,6 @@ function* root() {
     takeEvery(
       ReduxActionTypes.FETCH_PLUGIN_FORM_CONFIGS_REQUEST,
       fetchPluginFormConfigsSaga,
-    ),
-    takeEvery(
-      ReduxActionTypes.GET_PLUGIN_FORM_CONFIG_INIT,
-      getPluginFormConfig,
     ),
   ]);
 }

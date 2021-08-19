@@ -5,7 +5,6 @@ import defaultTemplate from "../../src/templates/default";
 import { WidgetTypeFactories } from "./Widgets/WidgetTypeFactories";
 const defaultMainContainer: ContainerWidgetProps<WidgetProps> = {
   ...(defaultTemplate as any),
-  canExtend: true,
   renderMode: "PAGE",
   version: 1,
   isLoading: false,

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router";
-import { ENTITY_TYPE, Log } from "entities/AppsmithConsole";
+import { ENTITY_TYPE, Message } from "entities/AppsmithConsole";
 import { AppState } from "reducers";
 import { getActionConfig } from "pages/Editor/Explorer/Actions/helpers";
 import { useNavigateToWidget } from "pages/Editor/Explorer/Widgets/useNavigateToWidget";
@@ -11,33 +11,24 @@ import {
   getCurrentApplicationId,
   getCurrentPageId,
 } from "selectors/editorSelectors";
-import { getAction, getDatasource } from "selectors/entitiesSelector";
+import { getAction } from "selectors/entitiesSelector";
+import {
+  getCurrentWidgetId,
+  getIsPropertyPaneVisible,
+} from "selectors/propertyPaneSelectors";
 import { isWidget, isAction } from "workers/evaluationUtils";
-import {
-  onApiEditor,
-  onQueryEditor,
-  onCanvas,
-  doesEntityHaveErrors,
-} from "./helpers";
+import { onApiEditor, onQueryEditor, onCanvas } from "./helpers";
 import history from "utils/history";
-import { getSelectedWidget } from "selectors/ui";
-import { getDebuggerErrors } from "selectors/debuggerSelectors";
-import { isEqual, keyBy } from "lodash";
-import {
-  getPluginIcon,
-  getWidgetIcon,
-} from "pages/Editor/Explorer/ExplorerIcons";
-import { isStoredDatasource } from "entities/Action";
 
 export const useFilteredLogs = (query: string, filter?: any) => {
   let logs = useSelector((state: AppState) => state.ui.debugger.logs);
 
   if (filter) {
-    logs = logs.filter((log) => log.severity === filter);
+    logs = logs.filter((log: Message) => log.severity === filter);
   }
 
   if (query) {
-    logs = logs.filter((log) => {
+    logs = logs.filter((log: Message) => {
       if (log.source?.name)
         return (
           log.source?.name.toUpperCase().indexOf(query.toUpperCase()) !== -1
@@ -48,9 +39,9 @@ export const useFilteredLogs = (query: string, filter?: any) => {
   return logs;
 };
 
-export const usePagination = (data: Log[], itemsPerPage = 50) => {
+export const usePagination = (data: Message[], itemsPerPage = 50) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [paginatedData, setPaginatedData] = useState<Log[]>([]);
+  const [paginatedData, setPaginatedData] = useState<Message[]>([]);
   const maxPage = Math.ceil(data.length / itemsPerPage);
 
   useEffect(() => {
@@ -91,9 +82,10 @@ export const useSelectedEntity = () => {
     return null;
   });
 
-  const selectedWidget = useSelector(getSelectedWidget);
+  const isPropertyPaneVisible = useSelector(getIsPropertyPaneVisible);
+  const selectedWidget = useSelector(getCurrentWidgetId);
   const widget = useSelector((state: AppState) => {
-    if (onCanvas(applicationId, currentPageId)) {
+    if (onCanvas(applicationId, currentPageId) && isPropertyPaneVisible) {
       return selectedWidget ? getWidget(state, selectedWidget) : null;
     }
 
@@ -154,51 +146,4 @@ export const useEntityLink = () => {
   return {
     navigateToEntity,
   };
-};
-
-export const useGetEntityInfo = (name: string) => {
-  const entity = useSelector((state: AppState) => state.evaluations.tree[name]);
-  const debuggerErrors = useSelector(getDebuggerErrors);
-  const action = useSelector((state: AppState) =>
-    isAction(entity) ? getAction(state, entity.actionId) : undefined,
-  );
-
-  const plugins = useSelector((state: AppState) => {
-    return state.entities.plugins.list;
-  }, isEqual);
-  const pluginGroups = useMemo(() => keyBy(plugins, "id"), [plugins]);
-  const icon = action && getPluginIcon(pluginGroups[action.pluginId]);
-  const datasource = useSelector((state: AppState) =>
-    action && isStoredDatasource(action.datasource)
-      ? getDatasource(state, action.datasource.id)
-      : undefined,
-  );
-
-  const getEntityInfo = useCallback(() => {
-    if (isWidget(entity)) {
-      const icon = getWidgetIcon(entity.type);
-      const hasError = doesEntityHaveErrors(entity.widgetId, debuggerErrors);
-
-      return {
-        name,
-        icon,
-        hasError,
-        type: ENTITY_TYPE.WIDGET,
-        entityType: entity.type,
-      };
-    } else if (isAction(entity)) {
-      const hasError = doesEntityHaveErrors(entity.actionId, debuggerErrors);
-
-      return {
-        name,
-        icon,
-        datasourceName: datasource?.name ?? "",
-        hasError,
-        type: ENTITY_TYPE.ACTION,
-        entityType: action?.pluginId ? pluginGroups[action.pluginId].name : "",
-      };
-    }
-  }, [name]);
-
-  return getEntityInfo;
 };

@@ -6,8 +6,6 @@ import org.springframework.http.codec.multipart.Part;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
 public interface UserDataService {
     Mono<UserData> getForUser(User user);
 
@@ -34,6 +32,4 @@ public interface UserDataService {
     Mono<Void> makeProfilePhotoResponse(ServerWebExchange exchange);
 
     Mono<UserData> updateLastUsedOrgList(String currentOrgId);
-
-    Mono<Map<String, Boolean>> getFeatureFlagsForCurrentUser();
 }

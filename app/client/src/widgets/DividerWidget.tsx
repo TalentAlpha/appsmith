@@ -2,7 +2,7 @@ import React from "react";
 import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
 import { WidgetType } from "constants/WidgetConstants";
 import DividerComponent from "components/designSystems/blueprint/DividerComponent";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import * as Sentry from "@sentry/react";
 
 class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
@@ -29,7 +29,7 @@ class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             helpText: "Controls the visibility of the widget",
@@ -39,7 +39,7 @@ class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },
@@ -73,7 +73,7 @@ class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
             ],
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             helpText: "Controls the thickness of divider",
@@ -83,10 +83,7 @@ class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
             placeholderText: "Enter thickness in pixels",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.NUMBER,
-              params: { min: 0, default: 0 },
-            },
+            validation: VALIDATION_TYPES.NUMBER,
           },
           {
             helpText: "Controls the stroke color of divider",
@@ -149,7 +146,6 @@ class DividerWidget extends BaseWidget<DividerWidgetProps, WidgetState> {
             isBindProperty: false,
             isTriggerProperty: false,
             hidden: (props: DividerWidgetProps) => props.capType === "nc",
-            dependencies: ["capType"],
           },
         ],
       },

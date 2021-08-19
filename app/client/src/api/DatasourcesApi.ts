@@ -25,13 +25,6 @@ export interface EmbeddedRestDatasourceRequest {
   pluginId: string;
 }
 
-type executeQueryData = Array<{ key: string; value?: string }>;
-
-export interface executeDatasourceQueryRequest {
-  datasourceId: string;
-  data: executeQueryData;
-}
-
 class DatasourcesApi extends API {
   static url = "v1/datasources";
 
@@ -89,16 +82,6 @@ class DatasourcesApi extends API {
       pluginId,
       packageName,
     });
-  }
-
-  static executeDatasourceQuery({
-    data,
-    datasourceId,
-  }: executeDatasourceQueryRequest) {
-    return API.put(
-      DatasourcesApi.url + `/datasource-query` + `/${datasourceId}`,
-      data,
-    );
   }
 }
 

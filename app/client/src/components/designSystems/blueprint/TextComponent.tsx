@@ -92,7 +92,6 @@ class TextComponent extends React.Component<TextComponentProps> {
           <Interweave
             content={text}
             matchers={[new EmailMatcher("email"), new UrlMatcher("url")]}
-            newWindow
           />
         </StyledText>
       </TextContainer>

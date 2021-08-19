@@ -17,12 +17,6 @@ export const selectWidgetInitAction = (
   payload: { widgetId, isMultiSelect },
 });
 
-export const deselectAllInitAction = () => {
-  return {
-    type: ReduxActionTypes.DESELECT_MULTIPLE_WIDGETS_INIT,
-  };
-};
-
 export const selectMultipleWidgetsAction = (
   widgetIds?: string[],
 ): ReduxAction<{ widgetIds?: string[] }> => {

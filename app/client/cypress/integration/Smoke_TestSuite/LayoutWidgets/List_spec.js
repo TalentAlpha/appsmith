@@ -18,7 +18,15 @@ describe("Container Widget Functionality", function() {
 
   it("checks currentItem binding", function() {
     cy.SearchEntityandOpen("Text1");
-    cy.testJsontext("text", `{{currentItem.first_name}}`);
+    cy.getCodeMirror().then(($cm) => {
+      cy.get(".CodeMirror textarea")
+        .first()
+        .type(`{{currentItem.first_name}}`, {
+          force: true,
+          parseSpecialCharSequences: false,
+        });
+    });
+
     cy.wait(1000);
 
     cy.closePropertyPane();
@@ -31,7 +39,14 @@ describe("Container Widget Functionality", function() {
 
   it("checks button action", function() {
     cy.SearchEntityandOpen("Button1");
-    cy.testJsontext("label", `{{currentItem.first_name}}`);
+    cy.getCodeMirror().then(($cm) => {
+      cy.get(".CodeMirror textarea")
+        .first()
+        .type(`{{currentItem.first_name}}`, {
+          force: true,
+          parseSpecialCharSequences: false,
+        });
+    });
     cy.addAction("{{currentItem.first_name}}");
 
     cy.PublishtheApp();

@@ -5,9 +5,7 @@ import { ControlWrapper, StyledPropertyPaneButton } from "./StyledControls";
 import styled from "constants/DefaultTheme";
 import { FormIcons } from "icons/FormIcons";
 import { AnyStyledComponent } from "styled-components";
-import CodeEditor, {
-  CodeEditorExpected,
-} from "components/editorComponents/CodeEditor";
+import CodeEditor from "components/editorComponents/CodeEditor";
 import {
   EditorModes,
   EditorSize,
@@ -17,7 +15,6 @@ import {
 import { Size, Category } from "components/ads/Button";
 import { AllChartData, ChartData } from "widgets/ChartWidget";
 import { generateReactKey } from "utils/generators";
-import { AutocompleteDataType } from "utils/autocomplete/TernServer";
 
 const Wrapper = styled.div`
   background-color: ${(props) =>
@@ -94,22 +91,6 @@ type RenderComponentProps = {
   theme: EditorTheme;
 };
 
-const expectedSeriesName: CodeEditorExpected = {
-  type: "string",
-  example: "series1",
-  autocompleteDataType: AutocompleteDataType.STRING,
-};
-const expectedSeriesData: CodeEditorExpected = {
-  type: "Array<{ x: string, y: string | number }>",
-  example: [
-    {
-      x: "Mon",
-      y: 10000,
-    },
-  ],
-  autocompleteDataType: AutocompleteDataType.ARRAY,
-};
-
 function DataControlComponent(props: RenderComponentProps) {
   const {
     dataTreePath,
@@ -139,7 +120,7 @@ function DataControlComponent(props: RenderComponentProps) {
         <CodeEditor
           dataTreePath={`${dataTreePath}.seriesName`}
           evaluatedValue={evaluated?.seriesName}
-          expected={expectedSeriesName}
+          expected={"string"}
           input={{
             value: item.seriesName,
             onChange: (
@@ -166,7 +147,7 @@ function DataControlComponent(props: RenderComponentProps) {
         <CodeEditor
           dataTreePath={`${dataTreePath}.data`}
           evaluatedValue={evaluated?.data}
-          expected={expectedSeriesData}
+          expected={`Array<x:string, y:number>`}
           input={{
             value: item.data,
             onChange: (

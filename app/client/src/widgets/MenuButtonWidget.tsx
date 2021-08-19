@@ -5,8 +5,9 @@ import { IconName } from "@blueprintjs/icons";
 
 import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
 import { WidgetType, WidgetTypes } from "constants/WidgetConstants";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
-import { ValidationTypes } from "constants/WidgetValidation";
+
 import MenuButtonComponent from "components/designSystems/appsmith/MenuButtonComponent";
 
 export interface MenuButtonWidgetProps extends WidgetProps {
@@ -51,7 +52,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             placeholderText: "Enter label",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "backgroundColor",
@@ -77,7 +78,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "isVisible",
@@ -87,7 +88,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "isCompact",
@@ -97,7 +98,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },
@@ -139,7 +140,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       placeholderText: "Enter label",
                       isBindProperty: true,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.TEXT },
+                      validation: VALIDATION_TYPES.TEXT,
                     },
                     {
                       propertyName: "backgroundColor",
@@ -165,7 +166,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       isJSConvertible: true,
                       isBindProperty: true,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.BOOLEAN },
+                      validation: VALIDATION_TYPES.BOOLEAN,
                     },
                     {
                       propertyName: "isVisible",
@@ -175,7 +176,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       isJSConvertible: true,
                       isBindProperty: true,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.BOOLEAN },
+                      validation: VALIDATION_TYPES.BOOLEAN,
                     },
                   ],
                 },
@@ -189,7 +190,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       controlType: "ICON_SELECT",
                       isBindProperty: false,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.TEXT },
+                      validation: VALIDATION_TYPES.TEXT,
                     },
                     {
                       propertyName: "iconColor",
@@ -206,7 +207,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       controlType: "ICON_ALIGN",
                       isBindProperty: false,
                       isTriggerProperty: false,
-                      validation: { type: ValidationTypes.TEXT },
+                      validation: VALIDATION_TYPES.TEXT,
                     },
                   ],
                 },
@@ -240,7 +241,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             controlType: "ICON_SELECT",
             isBindProperty: false,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "iconColor",
@@ -257,7 +258,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             controlType: "ICON_ALIGN",
             isBindProperty: false,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
         ],
       },

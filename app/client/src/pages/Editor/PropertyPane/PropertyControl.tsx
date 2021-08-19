@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from "react";
-import _, { isEqual } from "lodash";
+import _, { get } from "lodash";
 import {
   ControlPropertyLabelContainer,
   ControlWrapper,
@@ -8,15 +8,16 @@ import {
 import { ControlIcons } from "icons/ControlIcons";
 import PropertyControlFactory from "utils/PropertyControlFactory";
 import PropertyHelpLabel from "pages/Editor/PropertyPane/PropertyHelpLabel";
+import FIELD_EXPECTED_VALUE from "constants/FieldExpectedValue";
 import { useDispatch, useSelector } from "react-redux";
 import AnalyticsUtil from "utils/AnalyticsUtil";
 import {
-  batchUpdateWidgetProperty,
-  deleteWidgetProperty,
   setWidgetDynamicProperty,
   updateWidgetPropertyRequest,
+  deleteWidgetProperty,
+  batchUpdateWidgetProperty,
 } from "actions/controlActions";
-import { RenderModes } from "constants/WidgetConstants";
+import { RenderModes, WidgetType } from "constants/WidgetConstants";
 import { PropertyPaneControlConfig } from "constants/PropertyControlConstants";
 import { IPanelProps } from "@blueprintjs/core";
 import PanelPropertiesEditor from "./PanelPropertiesEditor";
@@ -25,11 +26,7 @@ import {
   isPathADynamicProperty,
   isPathADynamicTrigger,
 } from "utils/DynamicBindingUtils";
-import {
-  getWidgetPropsForPropertyName,
-  WidgetProperties,
-} from "selectors/propertyPaneSelectors";
-import { getWidgetEnhancementSelector } from "selectors/widgetEnhancementSelectors";
+import { getWidgetPropsForPropertyPane } from "selectors/propertyPaneSelectors";
 import Boxed from "components/editorComponents/Onboarding/Boxed";
 import { OnboardingStep } from "constants/OnboardingConstants";
 import Indicator from "components/editorComponents/Onboarding/Indicator";
@@ -37,9 +34,12 @@ import { EditorTheme } from "components/editorComponents/CodeEditor/EditorConfig
 import AppsmithConsole from "utils/AppsmithConsole";
 import { ENTITY_TYPE } from "entities/AppsmithConsole";
 import LOG_TYPE from "entities/AppsmithConsole/logtype";
-import { getExpectedValue } from "utils/validation/common";
+
+import {
+  useChildWidgetEnhancementFns,
+  useParentWithEnhancementFn,
+} from "sagas/WidgetEnhancementHelpers";
 import { ControlData } from "components/propertyControls/BaseControl";
-import { AutocompleteDataType } from "utils/autocomplete/TernServer";
 
 type Props = PropertyPaneControlConfig & {
   panel: IPanelProps;
@@ -48,54 +48,41 @@ type Props = PropertyPaneControlConfig & {
 
 const PropertyControl = memo((props: Props) => {
   const dispatch = useDispatch();
-
-  const propsSelector = getWidgetPropsForPropertyName(
-    props.propertyName,
-    props.dependencies,
-  );
-
-  const widgetProperties: WidgetProperties = useSelector(
-    propsSelector,
-    isEqual,
-  );
-
-  const enhancementSelector = getWidgetEnhancementSelector(
+  const widgetProperties: any = useSelector(getWidgetPropsForPropertyPane);
+  const parentWithEnhancement = useParentWithEnhancementFn(
     widgetProperties.widgetId,
   );
 
-  const { enhancementFns, parentIdWithEnhancementFn } = useSelector(
-    enhancementSelector,
-    isEqual,
-  );
-
+  /** get all child enhancements functions */
   const {
     autoCompleteEnhancementFn: childWidgetAutoCompleteEnhancementFn,
     customJSControlEnhancementFn: childWidgetCustomJSControlEnhancementFn,
     hideEvaluatedValueEnhancementFn: childWidgetHideEvaluatedValueEnhancementFn,
     propertyPaneEnhancementFn: childWidgetPropertyUpdateEnhancementFn,
     updateDataTreePathFn: childWidgetDataTreePathEnhancementFn,
-  } = enhancementFns;
+  } = useChildWidgetEnhancementFns(widgetProperties.widgetId);
 
   const toggleDynamicProperty = useCallback(
     (propertyName: string, isDynamic: boolean) => {
       AnalyticsUtil.logEvent("WIDGET_TOGGLE_JS_PROP", {
-        widgetType: widgetProperties?.type,
-        widgetName: widgetProperties?.widgetName,
+        widgetType: widgetProperties.type,
+        widgetName: widgetProperties.widgetName,
         propertyName: propertyName,
         propertyState: !isDynamic ? "JS" : "NORMAL",
       });
       dispatch(
         setWidgetDynamicProperty(
-          widgetProperties?.widgetId,
+          widgetProperties.widgetId,
           propertyName,
           !isDynamic,
         ),
       );
     },
     [
-      widgetProperties?.widgetId,
-      widgetProperties?.type,
-      widgetProperties?.widgetName,
+      dispatch,
+      widgetProperties.widgetId,
+      widgetProperties.type,
+      widgetProperties.widgetName,
     ],
   );
 
@@ -103,7 +90,7 @@ const PropertyControl = memo((props: Props) => {
     (propertyPaths: string[]) => {
       dispatch(deleteWidgetProperty(widgetProperties.widgetId, propertyPaths));
     },
-    [widgetProperties.widgetId],
+    [dispatch, widgetProperties.widgetId],
   );
   const onBatchUpdateProperties = useCallback(
     (allUpdates: Record<string, unknown>) =>
@@ -112,7 +99,7 @@ const PropertyControl = memo((props: Props) => {
           modify: allUpdates,
         }),
       ),
-    [widgetProperties.widgetId],
+    [widgetProperties.widgetId, dispatch],
   );
   // this function updates the properties of widget passed
   const onBatchUpdatePropertiesOfWidget = useCallback(
@@ -128,7 +115,7 @@ const PropertyControl = memo((props: Props) => {
         }),
       );
     },
-    [],
+    [dispatch],
   );
 
   /**
@@ -184,7 +171,7 @@ const PropertyControl = memo((props: Props) => {
 
           onBatchUpdatePropertiesOfWidget(
             allUpdates,
-            parentIdWithEnhancementFn,
+            get(parentWithEnhancement, "widgetId", ""),
             triggerPaths,
           );
         }
@@ -235,7 +222,7 @@ const PropertyControl = memo((props: Props) => {
         });
       }
     },
-    [widgetProperties],
+    [dispatch, widgetProperties],
   );
 
   const openPanel = useCallback(
@@ -286,16 +273,13 @@ const PropertyControl = memo((props: Props) => {
       widgetProperties,
       parentPropertyName: propertyName,
       parentPropertyValue: propertyValue,
+      expected: FIELD_EXPECTED_VALUE[widgetProperties.type as WidgetType][
+        propertyName
+      ] as any,
       additionalDynamicData: {},
     };
-    config.expected = getExpectedValue(props.validation);
     if (isPathADynamicTrigger(widgetProperties, propertyName)) {
       config.validationMessage = "";
-      config.expected = {
-        example: 'showAlert("There was an error!", "error")',
-        type: "Function",
-        autocompleteDataType: AutocompleteDataType.FUNCTION,
-      };
       delete config.dataTreePath;
       delete config.evaluatedValue;
     }

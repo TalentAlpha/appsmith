@@ -14,13 +14,10 @@ type MenuProps = CommonComponentProps & {
   modifiers?: PopperModifiers;
   isOpen?: boolean;
   onClose?: () => void;
-  canEscapeKeyClose?: boolean;
-  canOutsideClickClose?: boolean;
-  menuItemWrapperWidth?: string;
 };
 
-const MenuWrapper = styled.div<{ width?: string }>`
-  width: ${(props) => (props.width ? props.width : "234px")};
+const MenuWrapper = styled.div`
+  width: 234px;
   background: ${(props) => props.theme.colors.menu.background};
   box-shadow: 0px 12px 28px ${(props) => props.theme.colors.menu.shadow};
 `;
@@ -32,7 +29,6 @@ const MenuOption = styled.div`
 function Menu(props: MenuProps) {
   return (
     <Popover
-      canEscapeKeyClose={props.canEscapeKeyClose}
       className={props.className}
       data-cy={props.cypressSelector}
       disabled={props.disabled}
@@ -46,7 +42,7 @@ function Menu(props: MenuProps) {
       position={props.position || Position.BOTTOM}
     >
       {props.target}
-      <MenuWrapper width={props.menuItemWrapperWidth}>
+      <MenuWrapper>
         {props.children &&
           props.children.map((el, index) => {
             return <MenuOption key={index}>{el}</MenuOption>;

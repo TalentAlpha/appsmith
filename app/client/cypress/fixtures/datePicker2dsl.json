@@ -22,8 +22,6 @@
       {
         "isVisible": true,
         "isDisabled": false,
-        "closeOnSelection": false,
-        "shortcuts": false,
         "datePickerType": "DATE_PICKER",
         "label": "",
         "dateFormat": "DD/MM/YYYY HH:mm",

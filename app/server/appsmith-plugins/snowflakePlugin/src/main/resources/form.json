@@ -10,34 +10,28 @@
             {
               "label": "Account name",
               "configProperty": "datasourceConfiguration.url",
-              "controlType": "INPUT_TEXT",
+              "controlType": "QUERY_DYNAMIC_INPUT_TEXT",
               "isRequired": true,
               "placeholderText": "xy12345.ap-south-1.aws"
             },
             {
               "label": "Warehouse",
               "configProperty": "datasourceConfiguration.properties[0].value",
-              "controlType": "INPUT_TEXT",
+              "controlType": "QUERY_DYNAMIC_INPUT_TEXT",
               "isRequired": true,
               "placeholderText": "COMPUTE_WH"
             },
             {
               "label": "Database",
               "configProperty": "datasourceConfiguration.properties[1].value",
-              "controlType": "INPUT_TEXT",
+              "controlType": "QUERY_DYNAMIC_INPUT_TEXT",
               "isRequired": true,
               "placeholderText": "SNOWFLAKE_SAMPLE_DATA"
             },
             {
               "label": "Default Schema",
               "configProperty": "datasourceConfiguration.properties[2].value",
-              "controlType": "INPUT_TEXT",
-              "initialValue": "PUBLIC"
-            },
-            {
-              "label": "Role",
-              "configProperty": "datasourceConfiguration.properties[3].value",
-              "controlType": "INPUT_TEXT",
+              "controlType": "QUERY_DYNAMIC_INPUT_TEXT",
               "initialValue": "PUBLIC"
             }
           ]

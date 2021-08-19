@@ -38,7 +38,6 @@ export const renderCell = (
   isHidden: boolean,
   cellProperties: CellLayoutProperties,
   tableWidth: number,
-  isCellVisible: boolean,
   onClick: () => void = noop,
   isSelected?: boolean,
 ) => {
@@ -46,19 +45,11 @@ export const renderCell = (
     case ColumnTypes.IMAGE:
       if (!value) {
         return (
-          <CellWrapper
-            cellProperties={cellProperties}
-            isCellVisible={isCellVisible}
-            isHidden={isHidden}
-          />
+          <CellWrapper cellProperties={cellProperties} isHidden={isHidden} />
         );
       } else if (!isString(value)) {
         return (
-          <CellWrapper
-            cellProperties={cellProperties}
-            isCellVisible={isCellVisible}
-            isHidden={isHidden}
-          >
+          <CellWrapper cellProperties={cellProperties} isHidden={isHidden}>
             <div>Invalid Image </div>
           </CellWrapper>
         );
@@ -68,11 +59,7 @@ export const renderCell = (
       const imageUrlRegex = /(http(s?):)([/|.|\w|\s|-])*\.(?:jpeg|jpg|gif|png)??(?:&?[^=&]*=[^=&]*)*/;
       const base64ImageRegex = /^data:image\/.*;base64/;
       return (
-        <CellWrapper
-          cellProperties={cellProperties}
-          isCellVisible={isCellVisible}
-          isHidden={isHidden}
-        >
+        <CellWrapper cellProperties={cellProperties} isHidden={isHidden}>
           {value
             .toString()
             // imageSplitRegex matched "," and char before it, so add space before ","
@@ -109,18 +96,13 @@ export const renderCell = (
       const youtubeRegex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|\?v=)([^#&?]*).*/;
       if (!value) {
         return (
-          <CellWrapper
-            cellProperties={cellProperties}
-            isCellVisible={isCellVisible}
-            isHidden={isHidden}
-          />
+          <CellWrapper cellProperties={cellProperties} isHidden={isHidden} />
         );
       } else if (isString(value) && youtubeRegex.test(value)) {
         return (
           <CellWrapper
             cellProperties={cellProperties}
             className="video-cell"
-            isCellVisible={isCellVisible}
             isHidden={isHidden}
           >
             <PopoverVideo url={value} />
@@ -128,11 +110,7 @@ export const renderCell = (
         );
       } else {
         return (
-          <CellWrapper
-            cellProperties={cellProperties}
-            isCellVisible={isCellVisible}
-            isHidden={isHidden}
-          >
+          <CellWrapper cellProperties={cellProperties} isHidden={isHidden}>
             Invalid Video Link
           </CellWrapper>
         );
@@ -142,16 +120,13 @@ export const renderCell = (
         <AutoToolTipComponent
           cellProperties={cellProperties}
           columnType={columnType}
-          isCellVisible={isCellVisible}
           isHidden={isHidden}
           tableWidth={tableWidth}
-          title={!!value ? value.toString() : ""}
+          title={value.toString()}
         >
           {value && columnType === ColumnTypes.URL && cellProperties.displayText
             ? cellProperties.displayText
-            : !!value
-            ? value.toString()
-            : ""}
+            : value.toString()}
         </AutoToolTipComponent>
       );
   }
@@ -162,8 +137,6 @@ interface RenderActionProps {
   columnActions?: ColumnAction[];
   backgroundColor: string;
   buttonLabelColor: string;
-  isDisabled: boolean;
-  isCellVisible: boolean;
   onCommandClick: (dynamicTrigger: string, onComplete: () => void) => void;
 }
 
@@ -173,28 +146,16 @@ export const renderActions = (
   cellProperties: CellLayoutProperties,
 ) => {
   if (!props.columnActions)
-    return (
-      <CellWrapper
-        cellProperties={cellProperties}
-        isCellVisible={props.isCellVisible}
-        isHidden={isHidden}
-      />
-    );
+    return <CellWrapper cellProperties={cellProperties} isHidden={isHidden} />;
 
   return (
-    <CellWrapper
-      cellProperties={cellProperties}
-      isCellVisible={props.isCellVisible}
-      isHidden={isHidden}
-    >
+    <CellWrapper cellProperties={cellProperties} isHidden={isHidden}>
       {props.columnActions.map((action: ColumnAction, index: number) => {
         return (
           <TableAction
             action={action}
             backgroundColor={props.backgroundColor}
             buttonLabelColor={props.buttonLabelColor}
-            isCellVisible={props.isCellVisible}
-            isDisabled={props.isDisabled}
             isSelected={props.isSelected}
             key={index}
             onCommandClick={props.onCommandClick}
@@ -210,8 +171,6 @@ function TableAction(props: {
   action: ColumnAction;
   backgroundColor: string;
   buttonLabelColor: string;
-  isDisabled: boolean;
-  isCellVisible: boolean;
   onCommandClick: (dynamicTrigger: string, onComplete: () => void) => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -229,20 +188,17 @@ function TableAction(props: {
         }
       }}
     >
-      {props.isCellVisible ? (
-        <Button
-          disabled={props.isDisabled}
-          filled
-          intent="PRIMARY_BUTTON"
-          loading={loading}
-          onClick={() => {
-            setLoading(true);
-            props.onCommandClick(props.action.dynamicTrigger, onComplete);
-          }}
-          size="small"
-          text={props.action.label}
-        />
-      ) : null}
+      <Button
+        filled
+        intent="PRIMARY_BUTTON"
+        loading={loading}
+        onClick={() => {
+          setLoading(true);
+          props.onCommandClick(props.action.dynamicTrigger, onComplete);
+        }}
+        size="small"
+        text={props.action.label}
+      />
     </ActionWrapper>
   );
 }
@@ -283,7 +239,6 @@ function CheckBoxCheckIcon() {
 export const renderCheckBoxCell = (isChecked: boolean) => (
   <CellCheckboxWrapper
     className="td t--table-multiselect"
-    isCellVisible
     isChecked={isChecked}
   >
     <CellCheckbox>{isChecked && <CheckBoxCheckIcon />}</CellCheckbox>
@@ -336,42 +291,40 @@ export const renderEmptyRows = (
         </div>
       );
     });
-  } else {
-    const tableColumns = columns.length
-      ? columns
-      : new Array(3).fill({ width: tableWidth / 3, isHidden: false });
-    return (
-      <>
-        {rows.map((row: string, index: number) => {
-          return (
-            <div
-              className="tr"
-              key={index}
-              style={{
-                display: "flex",
-                flex: "1 0 auto",
-              }}
-            >
-              {multiRowSelection && renderCheckBoxCell(false)}
-              {tableColumns.map((column: any, colIndex: number) => {
-                return (
-                  <div
-                    className="td"
-                    key={colIndex}
-                    style={{
-                      width: column.width + "px",
-                      boxSizing: "border-box",
-                      flex: `${column.width} 0 auto`,
-                    }}
-                  />
-                );
-              })}
-            </div>
-          );
-        })}
-      </>
-    );
   }
+  const tableColumns = columns.length
+    ? columns
+    : new Array(3).fill({ width: tableWidth / 3, isHidden: false });
+  return (
+    <>
+      {rows.map((row: string, index: number) => {
+        return (
+          <div
+            className="tr"
+            key={index}
+            style={{
+              display: "flex",
+              flex: "1 0 auto",
+            }}
+          >
+            {tableColumns.map((column: any, colIndex: number) => {
+              return (
+                <div
+                  className="td"
+                  key={colIndex}
+                  style={{
+                    width: column.width + "px",
+                    boxSizing: "border-box",
+                    flex: `${column.width} 0 auto`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        );
+      })}
+    </>
+  );
 };
 
 const AscendingIcon = styled(ControlIcons.SORT_CONTROL as AnyStyledComponent)`
@@ -478,13 +431,11 @@ export function getDefaultColumnProperties(
     enableFilter: true,
     enableSort: true,
     isVisible: true,
-    isDisabled: false,
-    isCellVisible: true,
     isDerived: !!isDerived,
     label: accessor,
     computedValue: isDerived
       ? ""
-      : `{{${widgetName}.sanitizedTableData.map((currentRow) => ( currentRow.${accessor}))}}`,
+      : `{{${widgetName}.sanitizedTableData.map((currentRow) => { return currentRow.${accessor}})}}`,
   };
 
   return columnProps;
@@ -543,7 +494,6 @@ const StyledSingleDropDown = styled(SingleDropDown)`
 
 export const renderDropdown = (props: {
   options: DropdownOption[];
-  isCellVisible: boolean;
   onItemSelect: (onOptionChange: string, item: DropdownOption) => void;
   onOptionChange: string;
   selectedIndex?: number;
@@ -559,9 +509,6 @@ export const renderDropdown = (props: {
     itemProps: IItemRendererProps,
   ) => {
     if (!itemProps.modifiers.matchesPredicate) {
-      return null;
-    }
-    if (!props.isCellVisible) {
       return null;
     }
     const isSelected: boolean = isOptionSelected(option);

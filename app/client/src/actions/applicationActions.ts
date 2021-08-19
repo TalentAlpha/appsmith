@@ -1,5 +1,5 @@
 import { ReduxAction, ReduxActionTypes } from "constants/ReduxActionConstants";
-import { APP_MODE } from "entities/App";
+import { APP_MODE } from "../reducers/entityReducers/appReducer";
 import {
   UpdateApplicationPayload,
   ImportApplicationRequest,

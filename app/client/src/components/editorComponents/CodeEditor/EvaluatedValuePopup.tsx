@@ -10,29 +10,14 @@ import ScrollIndicator from "components/ads/ScrollIndicator";
 import DebugButton from "components/editorComponents/Debugger/DebugCTA";
 import { EvaluationSubstitutionType } from "entities/DataTree/dataTreeFactory";
 import Tooltip from "components/ads/Tooltip";
-import { Classes, Collapse, Icon } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { UNDEFINED_VALIDATION } from "utils/validation/common";
-import { IPopoverSharedProps } from "@blueprintjs/core";
-
+import { Classes } from "@blueprintjs/core";
 import {
   EvaluationError,
   PropertyEvaluationErrorType,
 } from "utils/DynamicBindingUtils";
 import * as Sentry from "@sentry/react";
 import { Severity } from "@sentry/react";
-import { CodeEditorExpected } from "components/editorComponents/CodeEditor/index";
 
-const modifiers: IPopoverSharedProps["modifiers"] = {
-  offset: {
-    enabled: true,
-    offset: "0, 15",
-  },
-  preventOverflow: {
-    enabled: true,
-    boundariesElement: "viewport",
-  },
-};
 const Wrapper = styled.div`
   position: relative;
   flex: 1;
@@ -90,20 +75,19 @@ const CodeWrapper = styled.pre<{ colorTheme: EditorTheme }>`
   margin: 0px 0px;
   background-color: ${(props) => THEMES[props.colorTheme].editorBackground};
   color: ${(props) => THEMES[props.colorTheme].editorColor};
-  font-size: 12px;
+  font-size: 14px;
   -ms-overflow-style: none;
   white-space: pre-wrap;
   word-break: break-all;
 `;
 
-const TypeText = styled.pre<{ colorTheme: EditorTheme; padded?: boolean }>`
-  padding: ${(props) => (props.padded ? "8px" : 0)};
+const TypeText = styled.pre<{ colorTheme: EditorTheme }>`
+  padding: ${(props) => props.theme.spaces[3]}px;
   background-color: ${(props) => THEMES[props.colorTheme].editorBackground};
   color: ${(props) => THEMES[props.colorTheme].editorColor};
   font-size: 12px;
   margin: 5px 0;
   -ms-overflow-style: none;
-  white-space: pre-wrap;
 `;
 
 const ErrorText = styled.p`
@@ -119,40 +103,19 @@ const ErrorText = styled.p`
   color: ${(props) => props.theme.colors.errorMessage};
 `;
 
-const StyledIcon = styled(Icon)`
-  &.open-collapse {
-    transform: rotate(90deg);
-  }
-  float: right;
-`;
-
 const StyledTitle = styled.p`
   margin: 8px 0;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  cursor: pointer;
 `;
 
 const StyledDebugButton = styled(DebugButton)`
   margin-left: auto;
 `;
 
-function CollapseToggle(props: { isOpen: boolean }) {
-  const { isOpen } = props;
-  return (
-    <StyledIcon
-      className={isOpen ? "open-collapse" : ""}
-      icon={IconNames.CHEVRON_RIGHT}
-    />
-  );
-}
-
 interface Props {
   theme: EditorTheme;
   isOpen: boolean;
   hasError: boolean;
-  expected?: CodeEditorExpected;
+  expected?: string;
   evaluatedValue?: any;
   children: JSX.Element;
   errors: EvaluationError[];
@@ -163,7 +126,7 @@ interface Props {
 
 interface PopoverContentProps {
   hasError: boolean;
-  expected?: CodeEditorExpected;
+  expected?: string;
   errors: EvaluationError[];
   useValidationMessage?: boolean;
   evaluatedValue: any;
@@ -230,11 +193,9 @@ export const CurrentValueViewer = memo(
     hideLabel?: boolean;
     preparedStatementViewer?: boolean;
   }) {
+    const currentValueWrapperRef = React.createRef<HTMLDivElement>();
     const codeWrapperRef = React.createRef<HTMLPreElement>();
-    const [openEvaluatedValue, setOpenEvaluatedValue] = useState(true);
-    const toggleEvaluatedValue = () => {
-      setOpenEvaluatedValue(!openEvaluatedValue);
-    };
+
     let content = (
       <CodeWrapper colorTheme={props.theme} ref={codeWrapperRef}>
         {"undefined"}
@@ -291,19 +252,16 @@ export const CurrentValueViewer = memo(
     return (
       <>
         {!props.hideLabel && (
-          <StyledTitle
-            data-testid="evaluated-value-popup-title"
-            onClick={toggleEvaluatedValue}
-          >
+          <StyledTitle data-testid="evaluated-value-popup-title">
             Evaluated Value
-            <CollapseToggle isOpen={openEvaluatedValue} />
           </StyledTitle>
         )}
-        <Collapse isOpen={openEvaluatedValue}>
-          <CurrentValueWrapper colorTheme={props.theme}>
+        <CurrentValueWrapper colorTheme={props.theme}>
+          <>
             {content}
-          </CurrentValueWrapper>
-        </Collapse>
+            <ScrollIndicator containerRef={currentValueWrapperRef} />
+          </>
+        </CurrentValueWrapper>
       </>
     );
   },
@@ -320,13 +278,6 @@ export const CurrentValueViewer = memo(
 
 function PopoverContent(props: PopoverContentProps) {
   const typeTextRef = React.createRef<HTMLPreElement>();
-  const [openExpectedDataType, setOpenExpectedDataType] = useState(false);
-  const toggleExpectedDataType = () =>
-    setOpenExpectedDataType(!openExpectedDataType);
-
-  const [openExpectedExample, setOpenExpectedExample] = useState(false);
-  const toggleExpectedExample = () =>
-    setOpenExpectedExample(!openExpectedExample);
   const {
     errors,
     expected,
@@ -334,6 +285,7 @@ function PopoverContent(props: PopoverContentProps) {
     onMouseEnter,
     onMouseLeave,
     theme,
+    useValidationMessage,
   } = props;
   let error;
   if (hasError) {
@@ -350,8 +302,9 @@ function PopoverContent(props: PopoverContentProps) {
       {hasError && error && (
         <ErrorText>
           <span className="t--evaluatedPopup-error">
-            {error.errorType === PropertyEvaluationErrorType.VALIDATION
-              ? `This value does not evaluate to type "${expected?.type}".`
+            {error.errorType === PropertyEvaluationErrorType.VALIDATION &&
+            !useValidationMessage
+              ? `This value does not evaluate to type "${expected}".`
               : error.errorMessage}
           </span>
           <StyledDebugButton
@@ -360,34 +313,13 @@ function PopoverContent(props: PopoverContentProps) {
           />
         </ErrorText>
       )}
-      {props.expected && props.expected.type !== UNDEFINED_VALIDATION && (
+      {!hasError && props.expected && (
         <>
-          <StyledTitle onClick={toggleExpectedDataType}>
-            Expected Structure
-            <CollapseToggle isOpen={openExpectedDataType} />
-          </StyledTitle>
-          <Collapse isOpen={openExpectedDataType}>
-            <TypeText colorTheme={props.theme} padded ref={typeTextRef}>
-              {props.expected.type}
-            </TypeText>
-          </Collapse>
-        </>
-      )}
-      {props.expected && props.expected.type !== UNDEFINED_VALIDATION && (
-        <>
-          <StyledTitle onClick={toggleExpectedExample}>
-            Expected Structure - Example
-            <CollapseToggle isOpen={openExpectedExample} />
-          </StyledTitle>
-          <Collapse isOpen={openExpectedExample}>
-            <TypeText colorTheme={props.theme} ref={typeTextRef}>
-              <CurrentValueViewer
-                evaluatedValue={props.expected.example}
-                hideLabel
-                theme={props.theme}
-              />
-            </TypeText>
-          </Collapse>
+          <StyledTitle>Expected Data Type</StyledTitle>
+          <TypeText colorTheme={props.theme} ref={typeTextRef}>
+            {props.expected}
+            <ScrollIndicator containerRef={typeTextRef} />
+          </TypeText>
         </>
       )}
       {!props.hideEvaluatedValue && (
@@ -403,7 +335,6 @@ function PopoverContent(props: PopoverContentProps) {
 
 function EvaluatedValuePopup(props: Props) {
   const [contentHovered, setContentHovered] = useState(false);
-  const [timeoutId, setTimeoutId] = useState(0);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const placement: Placement = useMemo(() => {
@@ -418,38 +349,42 @@ function EvaluatedValuePopup(props: Props) {
 
   return (
     <Wrapper ref={wrapperRef}>
-      <Popper
-        isOpen={props.isOpen || contentHovered}
-        modifiers={modifiers}
-        placement={placement}
-        targetNode={wrapperRef.current || undefined}
-        zIndex={5}
-      >
-        <PopoverContent
-          errors={props.errors}
-          evaluatedValue={props.evaluatedValue}
-          expected={props.expected}
-          hasError={props.hasError}
-          hideEvaluatedValue={props.hideEvaluatedValue}
-          onMouseEnter={() => {
-            clearTimeout(timeoutId);
-            setContentHovered(true);
+      {(props.isOpen || contentHovered) && (
+        <Popper
+          isOpen
+          modifiers={{
+            offset: {
+              enabled: true,
+              offset: "0, 15",
+            },
           }}
-          onMouseLeave={() => {
-            const id = setTimeout(() => setContentHovered(false), 500);
-            setTimeoutId(id);
-          }}
-          preparedStatementViewer={
-            props.evaluationSubstitutionType
-              ? props.evaluationSubstitutionType ===
-                EvaluationSubstitutionType.PARAMETER
-              : false
-          }
-          theme={props.theme}
-          useValidationMessage={props.useValidationMessage}
-        />
-      </Popper>
-
+          placement={placement}
+          targetNode={wrapperRef.current || undefined}
+          zIndex={5}
+        >
+          <PopoverContent
+            errors={props.errors}
+            evaluatedValue={props.evaluatedValue}
+            expected={props.expected}
+            hasError={props.hasError}
+            hideEvaluatedValue={props.hideEvaluatedValue}
+            onMouseEnter={() => {
+              setContentHovered(true);
+            }}
+            onMouseLeave={() => {
+              setContentHovered(false);
+            }}
+            preparedStatementViewer={
+              props.evaluationSubstitutionType
+                ? props.evaluationSubstitutionType ===
+                  EvaluationSubstitutionType.PARAMETER
+                : false
+            }
+            theme={props.theme}
+            useValidationMessage={props.useValidationMessage}
+          />
+        </Popper>
+      )}
       {props.children}
     </Wrapper>
   );

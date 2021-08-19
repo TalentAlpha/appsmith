@@ -3,10 +3,9 @@ import React from "react";
 import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
 import { WidgetType, WidgetTypes } from "constants/WidgetConstants";
 import IframeComponent from "components/designSystems/blueprint/IframeComponent";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import * as Sentry from "@sentry/react";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
-import withMeta, { WithMeta } from "./MetaHOC";
 
 class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
   static getPropertyPaneConfig() {
@@ -22,22 +21,17 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
             placeholderText: "Enter the URL of the page to embed",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.SAFE_URL,
-              params: {
-                default: "https://wikipedia.org",
-              },
-            },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "title",
             helpText: "Label the content of the page to embed",
             label: "Title",
             controlType: "INPUT_TEXT",
-            placeholderText: "Title for iframe element",
+            placeholderText: "Enter the title of the page to embed",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
         ],
       },
@@ -81,10 +75,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
             isBindProperty: true,
             isTriggerProperty: false,
             inputType: "NUMBER",
-            validation: {
-              type: ValidationTypes.NUMBER,
-              params: { min: 0, max: 100, default: 100 },
-            },
+            validation: VALIDATION_TYPES.NUMBER,
           },
           {
             propertyName: "borderWidth",
@@ -93,20 +84,11 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
             isBindProperty: true,
             isTriggerProperty: false,
             inputType: "NUMBER",
-            validation: {
-              type: ValidationTypes.NUMBER,
-              params: { min: 0, default: 1 },
-            },
+            validation: VALIDATION_TYPES.NUMBER,
           },
         ],
       },
     ];
-  }
-
-  static getMetaPropertiesMap(): Record<string, any> {
-    return {
-      message: undefined,
-    };
   }
 
   urlChangedHandler = (url: string) => {
@@ -126,14 +108,15 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
     if (!this.props.source?.includes(event.origin)) {
       return;
     }
-
-    this.props.updateWidgetMetaProperty("message", event.data, {
-      triggerPropertyName: "onMessageReceived",
-      dynamicString: this.props.onMessageReceived,
-      event: {
-        type: EventType.ON_IFRAME_MESSAGE_RECEIVED,
-      },
-    });
+    if (this.props.onMessageReceived) {
+      super.executeAction({
+        triggerPropertyName: "onMessageReceived",
+        dynamicString: this.props.onMessageReceived,
+        event: {
+          type: EventType.ON_IFRAME_MESSAGE_RECEIVED,
+        },
+      });
+    }
   };
 
   getPageView() {
@@ -141,12 +124,10 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
       borderColor,
       borderOpacity,
       borderWidth,
-      renderMode,
       source,
       title,
       widgetId,
     } = this.props;
-
     return (
       <IframeComponent
         borderColor={borderColor}
@@ -154,7 +135,6 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
         borderWidth={borderWidth}
         onMessageReceived={this.messageReceivedHandler}
         onURLChanged={this.urlChangedHandler}
-        renderMode={renderMode}
         source={source}
         title={title}
         widgetId={widgetId}
@@ -167,7 +147,7 @@ class IframeWidget extends BaseWidget<IframeWidgetProps, WidgetState> {
   }
 }
 
-export interface IframeWidgetProps extends WidgetProps, WithMeta {
+export interface IframeWidgetProps extends WidgetProps {
   source: string;
   title?: string;
   onURLChanged?: string;
@@ -175,8 +155,7 @@ export interface IframeWidgetProps extends WidgetProps, WithMeta {
   borderColor?: string;
   borderOpacity?: number;
   borderWidth?: number;
-  message?: any;
 }
 
 export default IframeWidget;
-export const ProfiledIframeWidget = Sentry.withProfiler(withMeta(IframeWidget));
+export const ProfiledIframeWidget = Sentry.withProfiler(IframeWidget);

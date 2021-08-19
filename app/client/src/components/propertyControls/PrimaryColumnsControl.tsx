@@ -241,7 +241,6 @@ class PrimaryColumnsControl extends BaseControl<ControlProps> {
       ...columnProps,
       buttonStyle: "rgb(3, 179, 101)",
       buttonLabelColor: "#FFFFFF",
-      isDisabled: false,
       ...tableStyles,
     };
 

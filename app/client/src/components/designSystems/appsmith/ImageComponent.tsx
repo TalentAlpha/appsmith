@@ -307,23 +307,14 @@ class ImageComponent extends React.Component<
 
     xhr.onload = function() {
       const urlCreator = window.URL || window.webkitURL;
-      const imageUrlObj = urlCreator.createObjectURL(this.response);
+      const imageUrl = urlCreator.createObjectURL(this.response);
       const tag = document.createElement("a");
-      tag.href = imageUrlObj;
+      tag.href = imageUrl;
       tag.download = fileName;
       document.body.appendChild(tag);
       tag.click();
       document.body.removeChild(tag);
-      window.URL.revokeObjectURL(imageUrlObj);
-    };
-    // if download fails open image in new tab
-    xhr.onerror = function() {
-      const tag = document.createElement("a");
-      tag.href = imageUrl;
-      tag.target = "_blank";
-      document.body.appendChild(tag);
-      tag.click();
-      document.body.removeChild(tag);
+      window.URL.revokeObjectURL(imageUrl);
     };
     xhr.send();
 

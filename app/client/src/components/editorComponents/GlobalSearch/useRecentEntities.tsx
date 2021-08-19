@@ -26,7 +26,6 @@ const useResentEntities = () => {
         if (result) {
           return {
             ...result,
-            entityType: type,
             kind: SEARCH_ITEM_TYPES.page,
           };
         } else {
@@ -39,17 +38,13 @@ const useResentEntities = () => {
         return (
           datasource && {
             ...datasource,
-            entityType: type,
             pageId: params?.pageId,
           }
         );
       } else if (type === "action")
-        return {
-          ...actions.find((action) => action?.config?.id === id),
-          entityType: type,
-        };
+        return actions.find((action) => action?.config?.id === id);
       else if (type === "widget") {
-        return { ...get(widgetsMap, id, null), entityType: type };
+        return get(widgetsMap, id, null);
       }
     })
     .filter(Boolean);

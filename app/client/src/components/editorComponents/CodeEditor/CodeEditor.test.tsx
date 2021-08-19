@@ -17,6 +17,7 @@ import {
 describe("CodeEditor", () => {
   it("should check EvaluatedValuePopup's hideEvaluatedValue  is false when hideEvaluatedValue is passed as false to codeditor", () => {
     const finalTheme = { ...theme, colors: { ...theme.colors, ...light } };
+
     const testRenderer = TestRenderer.create(
       <Provider store={store}>
         <ThemeProvider theme={finalTheme}>
@@ -38,6 +39,7 @@ describe("CodeEditor", () => {
       </Provider>,
     );
     const testInstance = testRenderer.root;
+
     expect(
       testInstance.findByType(EvaluatedValuePopup).props.hideEvaluatedValue,
     ).toBe(false);
@@ -45,6 +47,7 @@ describe("CodeEditor", () => {
 
   it("should check EvaluatedValuePopup's hideEvaluatedValue is true when hideEvaluatedValue is passed as true to codeditor", () => {
     const finalTheme = { ...theme, colors: { ...theme.colors, ...light } };
+
     const testRenderer = TestRenderer.create(
       <Provider store={store}>
         <ThemeProvider theme={finalTheme}>
@@ -66,6 +69,7 @@ describe("CodeEditor", () => {
       </Provider>,
     );
     const testInstance = testRenderer.root;
+
     expect(
       testInstance.findByType(EvaluatedValuePopup).props.hideEvaluatedValue,
     ).toBe(true);

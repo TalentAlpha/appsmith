@@ -25,7 +25,6 @@ import { ReduxAction } from "constants/ReduxActionConstants";
 import { SAAS_EDITOR_DATASOURCE_ID_URL } from "../SaaSEditor/constants";
 import { setGlobalSearchQuery } from "actions/globalSearchActions";
 import { toggleShowGlobalSearchModal } from "actions/globalSearchActions";
-import { getQueryParams } from "../../../utils/AppsmithUtils";
 import { redirectToNewIntegrations } from "actions/apiPaneActions";
 
 interface ReduxStateProps {
@@ -74,11 +73,7 @@ class DataSourceEditor extends React.Component<Props> {
     const { applicationId, pageId } = this.props.match.params;
     this.props.updateDatasource(
       formData,
-      this.props.redirectToNewIntegrations(
-        applicationId,
-        pageId,
-        getQueryParams(),
-      ),
+      this.props.redirectToNewIntegrations(applicationId, pageId),
     );
   };
 
@@ -158,12 +153,8 @@ const mapDispatchToProps = (dispatch: any): DatasourcePaneFunctions => ({
   updateDatasource: (formData: any, onSuccess?: ReduxAction<unknown>) => {
     dispatch(updateDatasource(formData, onSuccess));
   },
-  redirectToNewIntegrations: (
-    applicationId: string,
-    pageId: string,
-    params: any,
-  ) => {
-    dispatch(redirectToNewIntegrations(applicationId, pageId, params));
+  redirectToNewIntegrations: (applicationId: string, pageId: string) => {
+    dispatch(redirectToNewIntegrations(applicationId, pageId));
   },
   testDatasource: (data: Datasource) => dispatch(testDatasource(data)),
   deleteDatasource: (id: string) => dispatch(deleteDatasource({ id })),
@@ -184,11 +175,7 @@ export interface DatasourcePaneFunctions {
   switchDatasource: (id: string) => void;
   setDatasourceEditorMode: (id: string, viewMode: boolean) => void;
   openOmnibarReadMore: (text: string) => void;
-  redirectToNewIntegrations: (
-    applicationId: string,
-    pageId: string,
-    params: any,
-  ) => void;
+  redirectToNewIntegrations: (applicationId: string, pageId: string) => void;
 }
 
 class DatasourceEditorRouter extends React.Component<Props> {
@@ -206,14 +193,13 @@ class DatasourceEditorRouter extends React.Component<Props> {
       pluginId,
       pluginImages,
       pluginPackageName,
-      viewMode,
     } = this.props;
     if (!pluginId && datasourceId) {
       return <EntityNotFoundPane />;
     }
 
     // Check for specific form types first
-    if (pluginDatasourceForm === "RestAPIDatasourceForm" && !viewMode) {
+    if (pluginDatasourceForm === "RestAPIDatasourceForm") {
       return (
         <RestAPIDatasourceForm
           applicationId={this.props.match.params.applicationId}

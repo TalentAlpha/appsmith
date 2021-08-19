@@ -13,10 +13,6 @@ import {
   isPermitted,
   PERMISSION_TYPE,
 } from "pages/Applications/permissionHelpers";
-import { User } from "constants/userConstants";
-import { getAppsmithConfigs } from "configs";
-
-const { intercomAppID } = getAppsmithConfigs();
 
 export const snapToGrid = (
   columnWidth: number,
@@ -55,77 +51,35 @@ export const Directions: { [id: string]: string } = {
 };
 
 export type Direction = typeof Directions[keyof typeof Directions];
-const SCROLL_THRESHOLD = 20;
+const SCROLL_THESHOLD = 10;
 
 export const getScrollByPixels = function(
-  elem: {
-    top: number;
-    height: number;
-  },
+  elem: Element,
   scrollParent: Element,
-  child: Element,
-): {
-  scrollAmount: number;
-  speed: number;
-} {
+): number {
+  const bounding = elem.getBoundingClientRect();
   const scrollParentBounds = scrollParent.getBoundingClientRect();
-  const scrollChildBounds = child.getBoundingClientRect();
   const scrollAmount =
-    2 *
-    GridDefaults.CANVAS_EXTENSION_OFFSET *
-    GridDefaults.DEFAULT_GRID_ROW_HEIGHT;
-  const topBuff =
-    elem.top + scrollChildBounds.top > 0
-      ? elem.top +
-        scrollChildBounds.top -
-        SCROLL_THRESHOLD -
-        scrollParentBounds.top
-      : 0;
-  const bottomBuff =
-    scrollParentBounds.bottom -
-    (elem.top + elem.height + scrollChildBounds.top + SCROLL_THRESHOLD);
-  if (topBuff < SCROLL_THRESHOLD) {
-    const speed = Math.max(
-      (SCROLL_THRESHOLD - topBuff) / (2 * SCROLL_THRESHOLD),
-      0.1,
-    );
-    return {
-      scrollAmount: 0 - scrollAmount,
-      speed,
-    };
-  }
-  if (bottomBuff < SCROLL_THRESHOLD) {
-    const speed = Math.max(
-      (SCROLL_THRESHOLD - bottomBuff) / (2 * SCROLL_THRESHOLD),
-      0.1,
-    );
-    return {
-      scrollAmount,
-      speed,
-    };
-  }
-  return {
-    scrollAmount: 0,
-    speed: 0,
-  };
+    GridDefaults.CANVAS_EXTENSION_OFFSET * GridDefaults.DEFAULT_GRID_ROW_HEIGHT;
+
+  if (
+    bounding.top > 0 &&
+    bounding.top - scrollParentBounds.top < SCROLL_THESHOLD
+  )
+    return -scrollAmount;
+  if (scrollParentBounds.bottom - bounding.bottom < SCROLL_THESHOLD)
+    return scrollAmount;
+  return 0;
 };
 
 export const scrollElementIntoParentCanvasView = (
-  el: {
-    top: number;
-    height: number;
-  } | null,
+  el: Element | null,
   parent: Element | null,
-  child: Element | null,
 ) => {
   if (el) {
     const scrollParent = parent;
-    if (scrollParent && child) {
-      const { scrollAmount: scrollBy } = getScrollByPixels(
-        el,
-        scrollParent,
-        child,
-      );
+    if (scrollParent) {
+      const scrollBy: number = getScrollByPixels(el, scrollParent);
       if (scrollBy < 0 && scrollParent.scrollTop > 0) {
         scrollParent.scrollBy({ top: scrollBy, behavior: "smooth" });
       }
@@ -384,31 +338,11 @@ export const renameKeyInObject = (object: any, key: string, newKey: string) => {
   return object;
 };
 
-// Can be used to check if the user has developer role access to org
-export const getCanCreateApplications = (currentOrg: Org) => {
+export const getCanManage = (currentOrg: Org) => {
   const userOrgPermissions = currentOrg.userPermissions || [];
   const canManage = isPermitted(
     userOrgPermissions,
-    PERMISSION_TYPE.CREATE_APPLICATION,
+    PERMISSION_TYPE.MANAGE_ORGANIZATION,
   );
   return canManage;
 };
-
-export const getIsSafeRedirectURL = (redirectURL: string) => {
-  try {
-    return new URL(redirectURL).origin === window.location.origin;
-  } catch (e) {
-    return false;
-  }
-};
-
-export function bootIntercom(user?: User) {
-  if (intercomAppID && window.Intercom) {
-    window.Intercom("boot", {
-      app_id: intercomAppID,
-      user_id: user?.username,
-      name: user?.name,
-      email: user?.email,
-    });
-  }
-}

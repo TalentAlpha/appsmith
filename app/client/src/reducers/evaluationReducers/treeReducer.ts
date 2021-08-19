@@ -2,7 +2,6 @@ import { ReduxAction, ReduxActionTypes } from "constants/ReduxActionConstants";
 import { applyChange, Diff } from "deep-diff";
 import { DataTree } from "entities/DataTree/dataTreeFactory";
 import { createImmerReducer } from "utils/AppsmithUtils";
-import * as Sentry from "@sentry/react";
 
 export type EvaluatedTreeState = DataTree;
 
@@ -26,16 +25,7 @@ const evaluatedTreeReducer = createImmerReducer(initialState, {
       if (!Array.isArray(update.path) || update.path.length === 0) {
         continue;
       }
-      try {
-        applyChange(state, undefined, update);
-      } catch (e) {
-        Sentry.captureException(e, {
-          extra: {
-            update,
-            updateLength: updates.length,
-          },
-        });
-      }
+      applyChange(state, undefined, update);
     }
   },
   [ReduxActionTypes.FETCH_PAGE_INIT]: () => initialState,

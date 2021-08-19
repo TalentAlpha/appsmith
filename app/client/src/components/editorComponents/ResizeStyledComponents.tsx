@@ -14,7 +14,15 @@ export const VisibilityContainer = styled.div<{
   width: 100%;
 `;
 
-const ResizeIndicatorStyle = css`
+export const EdgeHandleStyles = css`
+  position: absolute;
+  width: ${EDGE_RESIZE_HANDLE_WIDTH}px;
+  height: ${EDGE_RESIZE_HANDLE_WIDTH}px;
+  &::before {
+    position: absolute;
+    background: ${theme.colors.widgetBorder};
+    content: "";
+  }
   &::after {
     position: absolute;
     content: "";
@@ -27,30 +35,11 @@ const ResizeIndicatorStyle = css`
   }
 `;
 
-export const EdgeHandleStyles = css<{
-  showAsBorder: boolean;
-}>`
-  position: absolute;
-  width: ${EDGE_RESIZE_HANDLE_WIDTH}px;
-  height: ${EDGE_RESIZE_HANDLE_WIDTH}px;
-  &::before {
-    position: absolute;
-    background: ${(props) =>
-      props.showAsBorder
-        ? theme.colors.widgetMultiSelectBorder
-        : theme.colors.widgetBorder};
-    content: "";
-  }
-  ${(props) => (!props.showAsBorder ? ResizeIndicatorStyle : "")}
-`;
-
-export const VerticalHandleStyles = css<{
-  showAsBorder: boolean;
-}>`
+export const VerticalHandleStyles = css`
   ${EdgeHandleStyles}
   top:-${WIDGET_PADDING - 1}px;
   height: calc(100% + ${2 * WIDGET_PADDING - 1}px);
-  ${(props) => (!props.showAsBorder ? "cursor: col-resize;" : "")}
+  cursor: col-resize;
   &:before {
     left: 50%;
     bottom: 0px;
@@ -59,13 +48,11 @@ export const VerticalHandleStyles = css<{
   }
 `;
 
-export const HorizontalHandleStyles = css<{
-  showAsBorder: boolean;
-}>`
+export const HorizontalHandleStyles = css`
   ${EdgeHandleStyles}
   left: -${WIDGET_PADDING}px;
   width: calc(100% + ${2 * WIDGET_PADDING}px);
-  ${(props) => (!props.showAsBorder ? "cursor: row-resize;" : "")}
+  cursor: row-resize;
   &:before {
     top: 50%;
     right: 0px;
@@ -102,36 +89,28 @@ export const CornerHandleStyles = css`
   height: ${CORNER_RESIZE_HANDLE_WIDTH}px;
 `;
 
-export const BottomRightHandleStyles = styled.div<{
-  showAsBorder: boolean;
-}>`
+export const BottomRightHandleStyles = styled.div`
   ${CornerHandleStyles};
   bottom: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
   right: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
-  ${(props) => (!props.showAsBorder ? "cursor: se-resize;" : "")}
+  cursor: se-resize;
 `;
 
-export const BottomLeftHandleStyles = styled.div<{
-  showAsBorder: boolean;
-}>`
+export const BottomLeftHandleStyles = styled.div`
   ${CornerHandleStyles};
   left: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
   bottom: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
-  ${(props) => (!props.showAsBorder ? "cursor: sw-resize;" : "")}
+  cursor: sw-resize;
 `;
-export const TopLeftHandleStyles = styled.div<{
-  showAsBorder: boolean;
-}>`
+export const TopLeftHandleStyles = styled.div`
   ${CornerHandleStyles};
   left: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
   top: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
-  ${(props) => (!props.showAsBorder ? "cursor: nw-resize;" : "")}
+  cursor: ew-resize;
 `;
-export const TopRightHandleStyles = styled.div<{
-  showAsBorder: boolean;
-}>`
+export const TopRightHandleStyles = styled.div`
   ${CornerHandleStyles};
   right: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
   top: -${CORNER_RESIZE_HANDLE_WIDTH / 2}px;
-  ${(props) => (!props.showAsBorder ? "cursor: ne-resize;" : "")}
+  cursor: ne-resize;
 `;

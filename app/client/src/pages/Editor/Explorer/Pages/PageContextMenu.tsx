@@ -5,15 +5,11 @@ import TreeDropdown, {
 } from "pages/Editor/Explorer/TreeDropdown";
 import { noop } from "lodash";
 import ContextMenuTrigger from "../ContextMenuTrigger";
+import { ReduxActionTypes } from "constants/ReduxActionConstants";
 import AnalyticsUtil from "utils/AnalyticsUtil";
 import { ContextMenuPopoverModifiers } from "../helpers";
 import { initExplorerEntityNameEdit } from "actions/explorerActions";
-import {
-  clonePageInit,
-  deletePage,
-  setPageAsDefault,
-  updatePage,
-} from "actions/pageActions";
+import { clonePageInit, updatePage } from "actions/pageActions";
 import styled from "styled-components";
 import { Icon } from "@blueprintjs/core";
 
@@ -33,52 +29,44 @@ export function PageContextMenu(props: {
 }) {
   const dispatch = useDispatch();
 
-  /**
-   * delete the page
-   *
-   * @return void
-   */
-  const deletePageCallback = useCallback((): void => {
-    dispatch(deletePage(props.pageId));
-    AnalyticsUtil.logEvent("DELETE_PAGE", {
-      pageName: props.name,
-    });
-  }, [dispatch]);
+  const deletePage = useCallback(
+    (pageId: string, pageName: string): void => {
+      dispatch({
+        type: ReduxActionTypes.DELETE_PAGE_INIT,
+        payload: {
+          id: pageId,
+        },
+      });
+      AnalyticsUtil.logEvent("DELETE_PAGE", {
+        pageName,
+      });
+    },
+    [dispatch],
+  );
 
-  /**
-   * sets the page as default
-   *
-   * @return void
-   */
-  const setPageAsDefaultCallback = useCallback((): void => {
-    dispatch(setPageAsDefault(props.pageId, props.applicationId));
-  }, [dispatch]);
+  const setPageAsDefault = useCallback(
+    (pageId: string, applicationId?: string): void => {
+      dispatch({
+        type: ReduxActionTypes.SET_DEFAULT_APPLICATION_PAGE_INIT,
+        payload: {
+          id: pageId,
+          applicationId,
+        },
+      });
+    },
+    [dispatch],
+  );
 
-  /**
-   * edit the page name
-   *
-   * @return void
-   */
   const editPageName = useCallback(
     () => dispatch(initExplorerEntityNameEdit(props.pageId)),
     [dispatch, props.pageId],
   );
 
-  /**
-   * clone the page
-   *
-   * @return void
-   */
   const clonePage = useCallback(() => dispatch(clonePageInit(props.pageId)), [
     dispatch,
     props.pageId,
   ]);
 
-  /**
-   * sets the page hidden
-   *
-   * @return void
-   */
   const setHiddenField = useCallback(
     () => dispatch(updatePage(props.pageId, props.name, !props.isHidden)),
     [dispatch, props.pageId, props.name, props.isHidden],
@@ -110,7 +98,7 @@ export function PageContextMenu(props: {
   if (!props.isDefaultPage) {
     optionTree.push({
       value: "setdefault",
-      onSelect: setPageAsDefaultCallback,
+      onSelect: () => setPageAsDefault(props.pageId, props.applicationId),
       label: "Set as Home Page",
     });
   }
@@ -118,7 +106,7 @@ export function PageContextMenu(props: {
   if (!props.isDefaultPage) {
     optionTree.push({
       value: "delete",
-      onSelect: deletePageCallback,
+      onSelect: () => deletePage(props.pageId, props.name),
       label: "Delete",
       intent: "danger",
     });

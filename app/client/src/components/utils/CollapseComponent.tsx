@@ -37,7 +37,6 @@ function CollapseComponent(props: {
   children?: React.ReactNode;
   title?: string;
   isOpen?: boolean;
-  titleStyle?: React.CSSProperties;
 }) {
   const [open, toggleOpen] = React.useState(false);
   const handleIsOpen = () => {
@@ -48,11 +47,7 @@ function CollapseComponent(props: {
   }
   return (
     <CollapseWrapper>
-      <div
-        className="collapse-title"
-        onClick={handleIsOpen}
-        style={props.titleStyle}
-      >
+      <div className="collapse-title" onClick={handleIsOpen}>
         {props.title}
         <Icon
           className={`icon ${!open ? "collapse" : ""}`}

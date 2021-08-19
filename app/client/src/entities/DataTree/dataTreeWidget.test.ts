@@ -7,7 +7,7 @@ import {
 } from "entities/DataTree/dataTreeFactory";
 import { RenderModes, WidgetTypes } from "constants/WidgetConstants";
 import WidgetFactory from "utils/WidgetFactory";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 
 describe("generateDataTreeWidget", () => {
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe("generateDataTreeWidget", () => {
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "placeholderText",
@@ -67,7 +67,7 @@ describe("generateDataTreeWidget", () => {
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "regex",
@@ -75,7 +75,7 @@ describe("generateDataTreeWidget", () => {
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.REGEX },
+            validation: VALIDATION_TYPES.REGEX,
           },
           {
             propertyName: "errorMessage",
@@ -83,7 +83,7 @@ describe("generateDataTreeWidget", () => {
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "isRequired",
@@ -92,7 +92,7 @@ describe("generateDataTreeWidget", () => {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "isVisible",
@@ -101,7 +101,7 @@ describe("generateDataTreeWidget", () => {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "isDisabled",
@@ -110,7 +110,7 @@ describe("generateDataTreeWidget", () => {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "resetOnSubmit",
@@ -119,7 +119,7 @@ describe("generateDataTreeWidget", () => {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },
@@ -204,14 +204,14 @@ describe("generateDataTreeWidget", () => {
         onTextChanged: true,
       },
       validationPaths: {
-        defaultText: { type: ValidationTypes.TEXT },
-        errorMessage: { type: ValidationTypes.TEXT },
-        isDisabled: { type: ValidationTypes.BOOLEAN },
-        isRequired: { type: ValidationTypes.BOOLEAN },
-        isVisible: { type: ValidationTypes.BOOLEAN },
-        placeholderText: { type: ValidationTypes.TEXT },
-        regex: { type: ValidationTypes.REGEX },
-        resetOnSubmit: { type: ValidationTypes.BOOLEAN },
+        defaultText: VALIDATION_TYPES.TEXT,
+        errorMessage: VALIDATION_TYPES.TEXT,
+        isDisabled: VALIDATION_TYPES.BOOLEAN,
+        isRequired: VALIDATION_TYPES.BOOLEAN,
+        isVisible: VALIDATION_TYPES.BOOLEAN,
+        placeholderText: VALIDATION_TYPES.TEXT,
+        regex: VALIDATION_TYPES.REGEX,
+        resetOnSubmit: VALIDATION_TYPES.BOOLEAN,
       },
       dynamicBindingPathList: [
         {

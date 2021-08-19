@@ -17,7 +17,7 @@ import {
   GLOBAL_DEFS,
   GLOBAL_FUNCTIONS,
 } from "utils/autocomplete/EntityDefinitions";
-import { FieldEntityInformation } from "components/editorComponents/CodeEditor/EditorConfig";
+import { HintEntityInformation } from "components/editorComponents/CodeEditor/EditorConfig";
 import { ENTITY_TYPE } from "entities/DataTree/dataTreeFactory";
 import SortRules from "./dataTypeSortRules";
 import _ from "lodash";
@@ -33,14 +33,13 @@ const DEFS: Def[] = [
   xmlJs,
   forge,
 ];
-
 const bigDoc = 250;
 const cls = "CodeMirror-Tern-";
 const hintDelay = 1700;
 
 export type Completion = Hint & {
   origin: string;
-  type: AutocompleteDataType;
+  type: DataType;
   data: {
     doc: string;
   };
@@ -61,15 +60,14 @@ type TernDoc = {
   changed: { to: number; from: number } | null;
 };
 
-export enum AutocompleteDataType {
-  OBJECT = "OBJECT",
-  NUMBER = "NUMBER",
-  ARRAY = "ARRAY",
-  FUNCTION = "FUNCTION",
-  BOOLEAN = "BOOLEAN",
-  STRING = "STRING",
-  UNKNOWN = "UNKNOWN",
-}
+export type DataType =
+  | "OBJECT"
+  | "NUMBER"
+  | "ARRAY"
+  | "FUNCTION"
+  | "BOOLEAN"
+  | "STRING"
+  | "UNKNOWN";
 
 type ArgHints = {
   start: CodeMirror.Position;
@@ -79,21 +77,12 @@ type ArgHints = {
   doc: CodeMirror.Doc;
 };
 
-export type DataTreeDefEntityInformation = {
-  type: ENTITY_TYPE;
-  subType: string;
-};
-
 class TernServer {
   server: Server;
   docs: TernDocs = Object.create(null);
   cachedArgHints: ArgHints | null = null;
   active: any;
-  fieldEntityInformation: FieldEntityInformation = {};
-  defEntityInformation: Map<string, DataTreeDefEntityInformation> = new Map<
-    string,
-    DataTreeDefEntityInformation
-  >();
+  entityInformation: HintEntityInformation = {};
 
   constructor() {
     this.server = new tern.Server({
@@ -143,15 +132,10 @@ class TernServer {
     });
   }
 
-  updateDef(
-    name: string,
-    def: Def,
-    entityInfo?: Map<string, DataTreeDefEntityInformation>,
-  ) {
+  updateDef(name: string, def: Def) {
     this.server.deleteDefs(name);
     // @ts-ignore: No types available
     this.server.addDefs(def, true);
-    if (entityInfo) this.defEntityInformation = entityInfo;
   }
 
   removeDef(name: string) {
@@ -284,11 +268,8 @@ class TernServer {
     findBestMatch: boolean,
     bestMatchSearch: string,
   ) {
-    const {
-      entityName,
-      entityType,
-      expectedType = AutocompleteDataType.UNKNOWN,
-    } = this.fieldEntityInformation;
+    const expectedDataType = this.getExpectedDataType();
+    const { entityName, entityType } = this.entityInformation;
     type CompletionType =
       | "DATA_TREE"
       | "MATCHING_TYPE"
@@ -312,12 +293,12 @@ class TernServer {
         if (completion.origin && completion.origin.startsWith("DATA_TREE")) {
           if (completion.text.includes(".")) {
             // nested paths (with ".") should only be used for best match
-            if (completion.type === expectedType) {
+            if (completion.type === expectedDataType) {
               completionType.MATCHING_TYPE.push(completion);
             }
           } else if (
             completion.origin === "DATA_TREE.APPSMITH.FUNCTIONS" &&
-            completion.type === expectedType
+            completion.type === expectedDataType
           ) {
             // Global functions should be in best match as well as DataTree
             completionType.MATCHING_TYPE.push(completion);
@@ -369,12 +350,10 @@ class TernServer {
     if (findBestMatch && completionType.MATCHING_TYPE.length) {
       const sortedMatches: Completion[] = [];
       const groupedMatches = _.groupBy(completionType.MATCHING_TYPE, (c) => {
-        const name = c.text.split(".")[0];
-        const entityInfo = this.defEntityInformation.get(name);
-        if (!entityInfo) return c.text;
-        return c.text.replace(name, entityInfo.subType);
+        const [, , subType, name] = c.origin.split(".");
+        return c.text.replace(name, subType);
       });
-      SortRules[expectedType].forEach((rule) => {
+      SortRules[expectedDataType].forEach((rule) => {
         if (Array.isArray(groupedMatches[rule])) {
           sortedMatches.push(...groupedMatches[rule]);
         }
@@ -383,16 +362,12 @@ class TernServer {
       sortedMatches.sort((a, b) => {
         let aRank = 0;
         let bRank = 0;
-        const aName = a.text.split(".")[0];
-        const bName = b.text.split(".")[0];
-        const aEntityInfo = this.defEntityInformation.get(aName);
-        const bEntityInfo = this.defEntityInformation.get(bName);
-        if (!aEntityInfo) return -1;
-        if (!bEntityInfo) return 1;
-        if (aEntityInfo.type === entityType) {
+        const entityTypeA: ENTITY_TYPE = a.origin.split(".")[1] as ENTITY_TYPE;
+        const entityTypeB: ENTITY_TYPE = b.origin.split(".")[1] as ENTITY_TYPE;
+        if (entityTypeA === entityType) {
           aRank = aRank + 1;
         }
-        if (bEntityInfo.type === entityType) {
+        if (entityTypeB === entityType) {
           bRank = bRank + 1;
         }
         return aRank - bRank;
@@ -420,15 +395,34 @@ class TernServer {
     ];
   }
 
-  getDataType(type: string): AutocompleteDataType {
-    if (type === "?") return AutocompleteDataType.UNKNOWN;
-    else if (type === "number") return AutocompleteDataType.NUMBER;
-    else if (type === "string") return AutocompleteDataType.STRING;
-    else if (type === "bool") return AutocompleteDataType.BOOLEAN;
-    else if (type === "array") return AutocompleteDataType.ARRAY;
-    else if (/^fn\(/.test(type)) return AutocompleteDataType.FUNCTION;
-    else if (/^\[/.test(type)) return AutocompleteDataType.ARRAY;
-    else return AutocompleteDataType.OBJECT;
+  getDataType(type: string): DataType {
+    if (type === "?") return "UNKNOWN";
+    else if (type === "number") return "NUMBER";
+    else if (type === "string") return "STRING";
+    else if (type === "bool") return "BOOLEAN";
+    else if (type === "array") return "ARRAY";
+    else if (/^fn\(/.test(type)) return "FUNCTION";
+    else if (/^\[/.test(type)) return "ARRAY";
+    else return "OBJECT";
+  }
+
+  getExpectedDataType(): DataType {
+    const type = this.entityInformation.expectedType;
+    if (type === undefined) return "UNKNOWN";
+    if (
+      type === "Array<Object>" ||
+      type === "Array" ||
+      type === "Array<{ label: string, value: string }>" ||
+      type === "Array<x:string, y:number>"
+    ) {
+      return "ARRAY";
+    }
+    if (type === "boolean") return "BOOLEAN";
+    if (type === "string") return "STRING";
+    if (type === "number") return "NUMBER";
+    if (type === "object" || type === "JSON") return "OBJECT";
+    if (type === "Function Call") return "FUNCTION";
+    return "UNKNOWN";
   }
 
   typeToIcon(type: string) {
@@ -823,8 +817,8 @@ class TernServer {
     this.remove(tooltip);
   }
 
-  setEntityInformation(entityInformation: FieldEntityInformation) {
-    this.fieldEntityInformation = entityInformation;
+  setEntityInformation(entityInformation: HintEntityInformation) {
+    this.entityInformation = entityInformation;
   }
 }
 
@@ -834,7 +828,7 @@ export const createCompletionHeader = (name: string): Completion => ({
   className: "CodeMirror-hint-header",
   data: { doc: "" },
   origin: "",
-  type: AutocompleteDataType.UNKNOWN,
+  type: "UNKNOWN",
   isHeader: true,
 });
 

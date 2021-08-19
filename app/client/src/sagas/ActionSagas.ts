@@ -8,8 +8,6 @@ import {
   all,
   call,
   put,
-  putResolve,
-  race,
   select,
   take,
   takeEvery,
@@ -45,7 +43,6 @@ import {
 import { validateResponse } from "./ErrorSagas";
 import { transformRestAction } from "transformers/RestActionTransformer";
 import {
-  getActionById,
   getCurrentApplicationId,
   getCurrentPageId,
 } from "selectors/editorSelectors";
@@ -65,7 +62,6 @@ import {
 import history from "utils/history";
 import {
   API_EDITOR_ID_URL,
-  BUILDER_PAGE_URL,
   INTEGRATION_EDITOR_URL,
   INTEGRATION_TABS,
   QUERIES_EDITOR_ID_URL,
@@ -94,15 +90,6 @@ import LOG_TYPE from "entities/AppsmithConsole/logtype";
 import { createNewApiAction } from "actions/apiPaneActions";
 import { createNewApiName, createNewQueryName } from "utils/AppsmithUtils";
 import { DEFAULT_API_ACTION_CONFIG } from "constants/ApiEditorConstants";
-import {
-  toggleShowGlobalSearchModal,
-  setGlobalSearchFilterContext,
-} from "actions/globalSearchActions";
-import {
-  filterCategories,
-  SEARCH_CATEGORY_ID,
-} from "components/editorComponents/GlobalSearch/utils";
-import { getWidgetById } from "./selectors";
 
 export function* createActionSaga(
   actionPayload: ReduxAction<
@@ -256,7 +243,7 @@ export function* fetchActionsForViewModeSaga(
 }
 
 export function* fetchActionsForPageSaga(
-  action: EvaluationReduxAction<{ pageId: string }>,
+  action: ReduxAction<{ pageId: string }>,
 ) {
   const { pageId } = action.payload;
   PerformanceTracker.startAsyncTracking(
@@ -270,9 +257,7 @@ export function* fetchActionsForPageSaga(
     );
     const isValidResponse = yield validateResponse(response);
     if (isValidResponse) {
-      yield put(
-        fetchActionsForPageSuccess(response.data, action.postEvalActions),
-      );
+      yield put(fetchActionsForPageSuccess(response.data));
       PerformanceTracker.stopAsyncTracking(
         PerformanceTransactionName.FETCH_PAGE_ACTIONS_API,
       );
@@ -589,22 +574,6 @@ export function* refactorActionName(
   }
 }
 
-function* bindDataOnCanvasSaga(
-  action: ReduxAction<{
-    queryId: string;
-    applicationId: string;
-    pageId: string;
-  }>,
-) {
-  const { applicationId, pageId, queryId } = action.payload;
-  history.push(
-    BUILDER_PAGE_URL(applicationId, pageId, {
-      isSnipingMode: "true",
-      bindTo: queryId,
-    }),
-  );
-}
-
 function* saveActionName(action: ReduxAction<{ id: string; name: string }>) {
   // Takes from state, checks if the name isValid, saves
   const apiId = action.payload.id;
@@ -780,32 +749,6 @@ function* executeCommand(
   const pageId = yield select(getCurrentPageId);
   const applicationId = yield select(getCurrentApplicationId);
   switch (actionPayload.payload.actionType) {
-    case "NEW_SNIPPET":
-      const { entityId, entityType, expectedType, propertyPath } = get(
-        actionPayload,
-        "payload.args",
-      );
-      const { fieldMeta, refinements } = yield buildMetaForSnippets(
-        entityId,
-        entityType,
-        expectedType,
-        propertyPath,
-      );
-      yield putResolve(
-        setGlobalSearchFilterContext({
-          category: filterCategories[SEARCH_CATEGORY_ID.SNIPPETS],
-          refinements,
-          fieldMeta,
-        }),
-      );
-      yield put(toggleShowGlobalSearchModal());
-      const effectRaceResult = yield race({
-        failure: take(ReduxActionTypes.CANCEL_SNIPPET),
-        success: take(ReduxActionTypes.INSERT_SNIPPET),
-      });
-      if (effectRaceResult.failure) return;
-      actionPayload.payload.callback(effectRaceResult.success.payload);
-      break;
     case "NEW_INTEGRATION":
       history.push(
         INTEGRATION_EDITOR_URL(applicationId, pageId, INTEGRATION_TABS.NEW),
@@ -854,34 +797,6 @@ function* executeCommand(
   }
 }
 
-function* buildMetaForSnippets(
-  entityId: any,
-  entityType: string,
-  expectedType: string,
-  propertyPath: string,
-) {
-  const refinements: any = {};
-  const fieldMeta = {
-    dataType: expectedType,
-    fields: `${propertyPath}<score=2>`,
-  };
-  let currentEntity, type;
-  if (entityType === ENTITY_TYPE.ACTION) {
-    currentEntity = yield select(getActionById, {
-      match: { params: { apiId: entityId } },
-    });
-    const plugin = yield select(getPlugin, currentEntity.pluginId);
-    type = (plugin.packageName || "").toLowerCase().split("-");
-    refinements.entities = [entityType.toLowerCase()].concat(type);
-  }
-  if (entityType === ENTITY_TYPE.WIDGET) {
-    currentEntity = yield select(getWidgetById, entityId);
-    type = currentEntity.type.toLowerCase().split("_");
-    refinements.entities = type;
-  }
-  return { refinements, fieldMeta };
-}
-
 export function* watchActionSagas() {
   yield all([
     takeEvery(ReduxActionTypes.SET_ACTION_PROPERTY, setActionPropertySaga),
@@ -893,7 +808,6 @@ export function* watchActionSagas() {
     takeEvery(ReduxActionTypes.CREATE_ACTION_INIT, createActionSaga),
     takeLatest(ReduxActionTypes.UPDATE_ACTION_INIT, updateActionSaga),
     takeLatest(ReduxActionTypes.DELETE_ACTION_INIT, deleteActionSaga),
-    takeLatest(ReduxActionTypes.BIND_DATA_ON_CANVAS, bindDataOnCanvasSaga),
     takeLatest(ReduxActionTypes.SAVE_ACTION_NAME_INIT, saveActionName),
     takeLatest(ReduxActionTypes.MOVE_ACTION_INIT, moveActionSaga),
     takeLatest(ReduxActionTypes.COPY_ACTION_INIT, copyActionSaga),

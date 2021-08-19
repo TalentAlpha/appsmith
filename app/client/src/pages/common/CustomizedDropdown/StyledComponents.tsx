@@ -38,8 +38,6 @@ export const DropdownContent = styled.div<{ skin: Skin }>`
   border: 0px;
   border-color: ${(props) => props.theme.dropdown[props.skin].border};
   background: ${(props) => props.theme.dropdown[props.skin].inActiveBG};
-  max-height: 300px;
-  overflow-y: auto;
 `;
 
 export const DropdownContentSection = styled.div<{

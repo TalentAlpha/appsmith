@@ -11,6 +11,15 @@ export const fetchOrg = (orgId: string, skipValidation?: boolean) => {
   };
 };
 
+export const changeOrgName = (name: string) => {
+  return {
+    type: ReduxActionTypes.UPDATE_ORG_NAME_INIT,
+    payload: {
+      name,
+    },
+  };
+};
+
 export const changeOrgUserRole = (
   orgId: string,
   role: string,

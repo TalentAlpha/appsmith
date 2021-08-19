@@ -41,8 +41,6 @@ import {
   postEvalActionDispatcher,
   updateTernDefinitions,
 } from "./PostEvaluationSagas";
-import { getAppMode } from "selectors/applicationSelectors";
-import { APP_MODE } from "entities/App";
 
 let widgetTypeConfigMap: WidgetTypeConfigMap;
 
@@ -50,6 +48,7 @@ const worker = new GracefulWorkerService(Worker);
 
 function* evaluateTreeSaga(
   postEvalActions?: Array<ReduxAction<unknown> | ReduxActionWithoutPayload>,
+  isFirstEvaluation = false,
 ) {
   const unevalTree = yield select(getUnevaluatedDataTree);
   log.debug({ unevalTree });
@@ -70,7 +69,6 @@ function* evaluateTreeSaga(
     errors,
     evaluationOrder,
     logs,
-    unEvalUpdates,
     updates,
   } = workerResponse;
   PerformanceTracker.stopAsyncTracking(
@@ -89,17 +87,18 @@ function* evaluateTreeSaga(
   log.debug({ dataTree: updatedDataTree });
   logs.forEach((evalLog: any) => log.debug(evalLog));
   yield call(evalErrorHandler, errors, updatedDataTree, evaluationOrder);
-  const appMode = yield select(getAppMode);
-  if (appMode !== APP_MODE.PUBLISHED) {
-    yield fork(
-      logSuccessfulBindings,
-      unevalTree,
-      updatedDataTree,
-      evaluationOrder,
-    );
-
-    yield fork(updateTernDefinitions, updatedDataTree, unEvalUpdates);
-  }
+  yield fork(
+    logSuccessfulBindings,
+    unevalTree,
+    updatedDataTree,
+    evaluationOrder,
+  );
+  yield fork(
+    updateTernDefinitions,
+    updatedDataTree,
+    evaluationOrder,
+    isFirstEvaluation,
+  );
 
   yield put(setDependencyMap(dependencies));
   if (postEvalActions && postEvalActions.length) {
@@ -232,7 +231,7 @@ function* evaluationChangeListenerSaga() {
   yield call(worker.start);
   widgetTypeConfigMap = WidgetFactory.getWidgetTypeConfigMap();
   const initAction = yield take(FIRST_EVAL_REDUX_ACTIONS);
-  yield fork(evaluateTreeSaga, initAction.postEvalActions);
+  yield fork(evaluateTreeSaga, initAction.postEvalActions, true);
   const evtActionChannel = yield actionChannel(
     EVALUATE_REDUX_ACTIONS,
     evalQueueBuffer(),
@@ -241,8 +240,12 @@ function* evaluationChangeListenerSaga() {
     const action: EvaluationReduxAction<unknown | unknown[]> = yield take(
       evtActionChannel,
     );
-    if (shouldProcessBatchedAction(action)) {
-      yield call(evaluateTreeSaga, action.postEvalActions);
+    if (FIRST_EVAL_REDUX_ACTIONS.includes(action.type)) {
+      yield call(evaluateTreeSaga, initAction.postEvalActions, true);
+    } else {
+      if (shouldProcessBatchedAction(action)) {
+        yield call(evaluateTreeSaga, action.postEvalActions);
+      }
     }
   }
 }

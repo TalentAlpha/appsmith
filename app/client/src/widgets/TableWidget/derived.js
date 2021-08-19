@@ -128,9 +128,9 @@ export default {
             isVisible: true,
             isDerived: false,
             label: id,
-            computedValue: props.sanitizedTableData.map(
-              (currentRow) => currentRow[id],
-            ),
+            computedValue: props.sanitizedTableData.map((currentRow) => {
+              return currentRow[id];
+            }),
           };
         }
       });
@@ -240,7 +240,7 @@ export default {
       const column = columns.find((column) => column.id === sortedColumn);
       const columnType =
         column && column.columnType ? column.columnType : "text";
-      const inputFormat = column.inputFormat;
+
       sortedTableData = derivedTableData.sort((a, b) => {
         if (
           _.isPlainObject(a) &&
@@ -260,14 +260,10 @@ export default {
             case "date":
               try {
                 return sortOrder
-                  ? moment(a[sortedColumn], inputFormat).isAfter(
-                      moment(b[sortedColumn], inputFormat),
-                    )
+                  ? moment(a[sortedColumn]).isAfter(b[sortedColumn])
                     ? 1
                     : -1
-                  : moment(b[sortedColumn], inputFormat).isAfter(
-                      moment(a[sortedColumn], inputFormat),
-                    )
+                  : moment(b[sortedColumn]).isAfter(a[sortedColumn])
                   ? 1
                   : -1;
               } catch (e) {
@@ -340,10 +336,7 @@ export default {
       },
       doesNotContain: (a, b) => {
         try {
-          return !a
-            .toString()
-            .toLowerCase()
-            .includes(b.toString().toLowerCase());
+          return !this.contains(a, b);
         } catch (e) {
           return false;
         }
@@ -371,16 +364,16 @@ export default {
         }
       },
       is: (a, b) => {
-        return moment(a).isSame(moment(b), "minute");
+        return moment(a).isSame(moment(b), "d");
       },
       isNot: (a, b) => {
-        return !moment(a).isSame(moment(b), "minute");
+        return !moment(a).isSame(moment(b), "d");
       },
       isAfter: (a, b) => {
-        return moment(a).isAfter(moment(b), "minute");
+        return !moment(a).isAfter(moment(b), "d");
       },
       isBefore: (a, b) => {
-        return moment(a).isBefore(moment(b), "minute");
+        return !moment(a).isBefore(moment(b), "d");
       },
     };
 

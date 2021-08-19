@@ -340,7 +340,8 @@ public class ArangoDBPlugin extends BasePlugin {
                         String collectionName = tuple.getT3();
                         Map document = tuple.getT4();
 
-                        generateTemplatesAndStructureForACollection(collectionName, document, columns, templates);
+                        generateTemplatesAndStructureForACollection(collectionName, document, columns,
+                                templates);
 
                         return Mono.just(structure);
                     })

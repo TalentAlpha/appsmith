@@ -1,13 +1,12 @@
 import React from "react";
-import styled from "styled-components";
-import * as Sentry from "@sentry/react";
-import { Route, Switch } from "react-router";
-
 import EditorsRouter from "./routes";
 import WidgetsEditor from "./WidgetsEditor";
-import { BUILDER_URL } from "constants/routes";
+import styled from "styled-components";
 import Sidebar from "components/editorComponents/Sidebar";
+import { Route, Switch } from "react-router";
+import { BUILDER_URL } from "constants/routes";
 
+import * as Sentry from "@sentry/react";
 const SentryRoute = Sentry.withSentryRouting(Route);
 
 const Container = styled.div`

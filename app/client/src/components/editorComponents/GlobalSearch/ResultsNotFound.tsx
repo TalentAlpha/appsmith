@@ -27,7 +27,7 @@ const Container = styled.div`
 
   .discord-link {
     cursor: pointer;
-    color: ${(props) => props.theme.colors.globalSearch.searchItemText};
+    color: white;
     font-weight: 700;
   }
 `;

@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useRef,
   forwardRef,
-  useCallback,
 } from "react";
 import styled from "styled-components";
 import { Colors } from "constants/Colors";
@@ -16,9 +15,7 @@ import { useEntityUpdateState, useEntityEditState } from "../hooks";
 import Loader from "./Loader";
 import { Classes } from "@blueprintjs/core";
 import { noop } from "lodash";
-import { useDispatch } from "react-redux";
 import useClick from "utils/hooks/useClick";
-import { ReduxActionTypes } from "constants/ReduxActionConstants";
 
 export enum EntityClassNames {
   CONTEXT_MENU = "entity-context-menu",
@@ -39,8 +36,6 @@ export const EntityItem = styled.div<{
   step: number;
   spaced: boolean;
   highlight: boolean;
-  rightIconClickable?: boolean;
-  alwaysShowRightIcon?: boolean;
 }>`
   position: relative;
   border-top: ${(props) => (props.highlight ? "1px solid #e7e7e7" : "none")};
@@ -83,24 +78,9 @@ export const EntityItem = styled.div<{
   }
 
   & .${EntityClassNames.RIGHT_ICON} {
-    visibility: ${(props) =>
-      props.alwaysShowRightIcon ? "visible" : "hidden"};
-    height: 30px;
-    width: 30px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    visibility: hidden;
+    padding-right: ${(props) => props.theme.spaces[2]}px;
   }
-
-  & .${EntityClassNames.RIGHT_ICON}:hover {
-    background: ${(props) =>
-      props.rightIconClickable ? Colors.SHARK2 : "initial"};
-  }
-
-  & .${EntityClassNames.RIGHT_ICON} svg {
-    cursor: ${(props) => (props.rightIconClickable ? "pointer" : "initial")};
-  }
-
   &:hover .${EntityClassNames.RIGHT_ICON} {
     visibility: visible;
   }
@@ -130,8 +110,6 @@ export type EntityProps = {
   runActionOnExpand?: boolean;
   onNameEdit?: (input: string, limit?: number) => string;
   onToggle?: (isOpen: boolean) => void;
-  alwaysShowRightIcon?: boolean;
-  onClickRightIcon?: () => void;
 };
 
 export const Entity = forwardRef(
@@ -139,7 +117,6 @@ export const Entity = forwardRef(
     const [isOpen, open] = useState(!!props.isDefaultExpanded);
     const isUpdating = useEntityUpdateState(props.entityId);
     const isEditing = useEntityEditState(props.entityId);
-    const dispatch = useDispatch();
 
     /* eslint-disable react-hooks/exhaustive-deps */
     useEffect(() => {
@@ -178,24 +155,6 @@ export const Entity = forwardRef(
       else toggleChildren(e);
     };
 
-    const exitEditMode = useCallback(() => {
-      dispatch({
-        type: ReduxActionTypes.END_EXPLORER_ENTITY_NAME_EDIT,
-      });
-    }, [dispatch]);
-
-    const enterEditMode = useCallback(
-      () =>
-        props.updateEntityName &&
-        dispatch({
-          type: ReduxActionTypes.INIT_EXPLORER_ENTITY_NAME_EDIT,
-          payload: {
-            id: props.entityId,
-          },
-        }),
-      [dispatch, props.entityId, props.updateEntityName],
-    );
-
     const itemRef = useRef<HTMLDivElement | null>(null);
     useClick(itemRef, handleClick, noop);
 
@@ -207,12 +166,10 @@ export const Entity = forwardRef(
       >
         <EntityItem
           active={!!props.active}
-          alwaysShowRightIcon={props.alwaysShowRightIcon}
           className={`${props.highlight ? "highlighted" : ""} ${
             props.active ? "active" : ""
           }`}
           highlight={!!props.highlight}
-          rightIconClickable={typeof props.onClickRightIcon === "function"}
           spaced={!!props.children}
           step={props.step}
         >
@@ -226,9 +183,7 @@ export const Entity = forwardRef(
           <IconWrapper onClick={handleClick}>{props.icon}</IconWrapper>
           <EntityName
             className={`${EntityClassNames.NAME}`}
-            enterEditMode={enterEditMode}
             entityId={props.entityId}
-            exitEditMode={exitEditMode}
             isEditing={!!props.updateEntityName && isEditing}
             name={props.name}
             nameTransformFn={props.onNameEdit}
@@ -236,10 +191,7 @@ export const Entity = forwardRef(
             searchKeyword={props.searchKeyword}
             updateEntityName={updateNameCallback}
           />
-          <IconWrapper
-            className={EntityClassNames.RIGHT_ICON}
-            onClick={props.onClickRightIcon}
-          >
+          <IconWrapper className={EntityClassNames.RIGHT_ICON}>
             {props.rightIcon}
           </IconWrapper>
           <AddButton

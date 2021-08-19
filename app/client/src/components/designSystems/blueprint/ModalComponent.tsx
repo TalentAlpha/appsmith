@@ -3,7 +3,6 @@ import { Overlay, Classes } from "@blueprintjs/core";
 import styled from "styled-components";
 import { getCanvasClassName } from "utils/generators";
 import { Layers } from "constants/Layers";
-import { MODAL_PORTAL_CLASSNAME } from "constants/WidgetConstants";
 
 const Container = styled.div<{
   width?: number;
@@ -101,7 +100,7 @@ export function ModalComponent(props: ModalComponentProps) {
       hasBackdrop={false}
       isOpen={props.isOpen}
       onClose={props.onClose}
-      portalClassName={`${MODAL_PORTAL_CLASSNAME} ${props.portalClassName}`}
+      portalClassName={`bp3-modal-widget ${props.portalClassName}`}
       usePortal
     >
       <Container

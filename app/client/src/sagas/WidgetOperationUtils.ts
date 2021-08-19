@@ -1,5 +1,4 @@
 import {
-  GridDefaults,
   MAIN_CONTAINER_WIDGET_ID,
   WidgetTypes,
 } from "constants/WidgetConstants";
@@ -9,10 +8,7 @@ import {
   FlattenedWidgetProps,
 } from "reducers/entityReducers/canvasWidgetsReducer";
 import { select } from "redux-saga/effects";
-import {
-  combineDynamicBindings,
-  getDynamicBindings,
-} from "utils/DynamicBindingUtils";
+import { getDynamicBindings } from "utils/DynamicBindingUtils";
 import { WidgetProps } from "widgets/BaseWidget";
 import { getWidgetMetaProps } from "./selectors";
 
@@ -80,11 +76,16 @@ export const handleIfParentIsListWidgetWhilePasting = (
         let value = currentWidget[key];
 
         if (isString(value) && value.indexOf("currentItem") > -1) {
-          const { jsSnippets, stringSegments } = getDynamicBindings(value);
+          const { jsSnippets } = getDynamicBindings(value);
 
-          const js = combineDynamicBindings(jsSnippets, stringSegments);
+          const modifiedAction = jsSnippets.reduce(
+            (prev: string, next: string) => {
+              return prev + `${next}`;
+            },
+            "",
+          );
 
-          value = `{{${listWidget.widgetName}.listData.map((currentItem) => ${js})}}`;
+          value = `{{${listWidget.widgetName}.listData.map((currentItem) => ${modifiedAction})}}`;
 
           currentWidget[key] = value;
 
@@ -322,7 +323,7 @@ export const checkIfPastingIntoListWidget = function(
       const copiedWidgetId = copiedWidgets[i].widgetId;
       const copiedWidget = canvasWidgets[copiedWidgetId];
 
-      if (copiedWidget?.type === WidgetTypes.LIST_WIDGET) {
+      if (copiedWidget.type === WidgetTypes.LIST_WIDGET) {
         return selectedWidget;
       }
     }
@@ -330,22 +331,4 @@ export const checkIfPastingIntoListWidget = function(
     return get(canvasWidgets, firstChildId);
   }
   return selectedWidget;
-};
-
-export const getParentBottomRowAfterAddingWidget = (
-  stateParent: FlattenedWidgetProps,
-  newWidget: FlattenedWidgetProps,
-) => {
-  const parentRowSpace =
-    newWidget.parentRowSpace || GridDefaults.DEFAULT_GRID_ROW_HEIGHT;
-  const updateBottomRow =
-    stateParent.type === WidgetTypes.CANVAS_WIDGET &&
-    newWidget.bottomRow * parentRowSpace > stateParent.bottomRow;
-  return updateBottomRow
-    ? Math.max(
-        (newWidget.bottomRow + GridDefaults.CANVAS_EXTENSION_OFFSET) *
-          parentRowSpace,
-        stateParent.bottomRow,
-      )
-    : stateParent.bottomRow;
 };

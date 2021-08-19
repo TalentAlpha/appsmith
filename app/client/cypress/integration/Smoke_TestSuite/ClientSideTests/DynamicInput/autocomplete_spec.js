@@ -1,4 +1,6 @@
-const dsl = require("../../../../fixtures/autocomp.json");
+/// <reference types="Cypress" />
+
+const dsl = require("../../../../fixtures/commondsl.json");
 const pages = require("../../../../locators/Pages.json");
 const dynamicInputLocators = require("../../../../locators/DynamicInput.json");
 const apiwidget = require("../../../../locators/apiWidgetslocator.json");

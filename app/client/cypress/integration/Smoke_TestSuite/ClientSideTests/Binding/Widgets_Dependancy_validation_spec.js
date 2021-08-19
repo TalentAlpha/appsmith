@@ -19,7 +19,7 @@ describe("Binding the multiple input Widget", function() {
 
   it("Cyclic depedancy error message validation", function() {
     cy.openPropertyPane("inputwidget");
-    cy.testJsontext("defaulttext", testdata.defaultMoustacheData + "}}");
+    cy.get(widgetsPage.defaultInput).type(testdata.defaultMoustacheData);
     cy.get(commonlocators.editPropCrossButton).click({ force: true });
     cy.wait("@updateLayout").should(
       "have.nested.property",
@@ -31,7 +31,9 @@ describe("Binding the multiple input Widget", function() {
 
   it("Binding input widget1 and validating", function() {
     cy.openPropertyPane("inputwidget");
-    cy.testJsontext("defaulttext", testdata.defaultdata);
+    cy.get(widgetsPage.defaultInput)
+      .type(testdata.command)
+      .type(testdata.defaultdata);
     cy.get(commonlocators.editPropCrossButton).click({ force: true });
     cy.wait("@updateLayout").should(
       "have.nested.property",
@@ -46,7 +48,7 @@ describe("Binding the multiple input Widget", function() {
 
   it("Binding second input widget with first input widget and validating", function() {
     cy.SearchEntityandOpen("Input2");
-    cy.testJsontext("defaulttext", testdata.defaultMoustacheData + "}}");
+    cy.get(widgetsPage.defaultInput).type(testdata.defaultMoustacheData);
     cy.get(commonlocators.editPropCrossButton).click({ force: true });
     cy.wait("@updateLayout").should(
       "have.nested.property",
@@ -75,7 +77,7 @@ describe("Binding the multiple input Widget", function() {
 
   it("Binding third input widget with first input widget and validating", function() {
     cy.SearchEntityandOpen("Input3");
-    cy.testJsontext("defaulttext", testdata.defaultMoustacheData + "}}");
+    cy.get(widgetsPage.defaultInput).type(testdata.defaultMoustacheData);
     cy.get(commonlocators.editPropCrossButton).click({ force: true });
     cy.wait("@updateLayout").should(
       "have.nested.property",

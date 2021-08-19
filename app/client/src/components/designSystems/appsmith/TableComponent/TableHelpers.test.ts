@@ -1,10 +1,10 @@
 import { ColumnProperties } from "./Constants";
 import { reorderColumns } from "./TableHelpers";
-import { getCurrentRowBinding } from "widgets/TableWidget/TableWidgetConstants";
 const MOCK_COLUMNS: Record<string, ColumnProperties> = {
   id: {
     isDerived: false,
-    computedValue: getCurrentRowBinding("Table1", "currentRow.id"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.id})}}",
     textSize: "PARAGRAPH",
     index: 0,
     isVisible: true,
@@ -31,7 +31,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "name",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.name"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.name})}}",
   },
   createdAt: {
     index: 2,
@@ -46,7 +47,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "createdAt",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.createdAt"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.createdAt})}}",
   },
   updatedAt: {
     index: 3,
@@ -61,7 +63,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "updatedAt",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.updatedAt"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.updatedAt})}}",
   },
   status: {
     index: 4,
@@ -76,7 +79,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "status",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.status"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.status})}}",
   },
   gender: {
     index: 5,
@@ -91,7 +95,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "gender",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.gender"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.gender})}}",
   },
   avatar: {
     index: 6,
@@ -106,7 +111,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "avatar",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.avatar"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.avatar})}}",
   },
   address: {
     index: 8,
@@ -121,7 +127,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "address",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
   },
   role: {
     index: 9,
@@ -136,7 +143,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isDerived: false,
     width: 150,
     label: "address",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
   },
   dob: {
     index: 10,
@@ -151,7 +159,8 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "dob",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.dob"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.dob})}}",
   },
   phoneNo: {
     index: 11,
@@ -166,11 +175,13 @@ const MOCK_COLUMNS: Record<string, ColumnProperties> = {
     isVisible: true,
     isDerived: false,
     label: "phoneNo",
-    computedValue: getCurrentRowBinding("Table1", "currentRow.phoneNo"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.phoneNo})}}",
   },
   email: {
     isDerived: false,
-    computedValue: getCurrentRowBinding("Table1", "currentRow.email"),
+    computedValue:
+      "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.email})}}",
     textSize: "PARAGRAPH",
     index: 1,
     isVisible: true,
@@ -215,11 +226,13 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "phoneNo",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.phoneNo"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.phoneNo})}}",
       },
       id: {
         isDerived: false,
-        computedValue: getCurrentRowBinding("Table1", "currentRow.id"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.id})}}",
         textSize: "PARAGRAPH",
         index: 1,
         isVisible: true,
@@ -245,7 +258,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "name",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.name"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.name})}}",
       },
       createdAt: {
         index: 3,
@@ -260,7 +274,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "createdAt",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.createdAt"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.createdAt})}}",
       },
       updatedAt: {
         index: 4,
@@ -275,7 +290,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "updatedAt",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.updatedAt"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.updatedAt})}}",
       },
       status: {
         index: 5,
@@ -290,7 +306,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "status",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.status"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.status})}}",
       },
       gender: {
         index: 6,
@@ -305,7 +322,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "gender",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.gender"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.gender})}}",
       },
       avatar: {
         index: 7,
@@ -320,11 +338,13 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "avatar",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.avatar"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.avatar})}}",
       },
       email: {
         isDerived: false,
-        computedValue: getCurrentRowBinding("Table1", "currentRow.email"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.email})}}",
         textSize: "PARAGRAPH",
         index: 8,
         isVisible: true,
@@ -350,7 +370,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "address",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
       },
       role: {
         index: 10,
@@ -365,7 +386,8 @@ describe("Validate Helpers", () => {
         isDerived: false,
         width: 150,
         label: "address",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
       },
       dob: {
         index: 11,
@@ -380,7 +402,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "dob",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.dob"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.dob})}}",
       },
     };
 
@@ -417,11 +440,13 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "phoneNo",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.phoneNo"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.phoneNo})}}",
       },
       id: {
         isDerived: false,
-        computedValue: getCurrentRowBinding("Table1", "currentRow.id"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.id})}}",
         textSize: "PARAGRAPH",
         index: 1,
         isVisible: true,
@@ -447,7 +472,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "name",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.name"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.name})}}",
       },
       createdAt: {
         index: 3,
@@ -462,7 +488,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "createdAt",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.createdAt"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.createdAt})}}",
       },
       updatedAt: {
         index: 4,
@@ -477,7 +504,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "updatedAt",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.updatedAt"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.updatedAt})}}",
       },
       status: {
         index: 5,
@@ -492,7 +520,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "status",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.status"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.status})}}",
       },
       gender: {
         index: 6,
@@ -507,7 +536,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "gender",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.gender"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.gender})}}",
       },
       avatar: {
         index: 7,
@@ -522,11 +552,13 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "avatar",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.avatar"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.avatar})}}",
       },
       email: {
         isDerived: false,
-        computedValue: getCurrentRowBinding("Table1", "currentRow.email"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.email})}}",
         textSize: "PARAGRAPH",
         index: 8,
         isVisible: true,
@@ -552,7 +584,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "address",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
       },
       role: {
         index: 10,
@@ -567,7 +600,8 @@ describe("Validate Helpers", () => {
         isDerived: false,
         width: 150,
         label: "address",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.address"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.address})}}",
       },
       dob: {
         index: 11,
@@ -582,7 +616,8 @@ describe("Validate Helpers", () => {
         isVisible: true,
         isDerived: false,
         label: "dob",
-        computedValue: getCurrentRowBinding("Table1", "currentRow.dob"),
+        computedValue:
+          "{{Table1.sanitizedTableData.map((currentRow) => { return currentRow.dob})}}",
       },
     };
 

@@ -1,27 +1,23 @@
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useEffect,
+  forwardRef,
+} from "react";
+import { useSelector, useDispatch } from "react-redux";
+import styled from "styled-components";
 import EditableText, {
   EditInteractionKind,
 } from "components/editorComponents/EditableText";
+import { removeSpecialChars } from "utils/helpers";
+import { AppState } from "reducers";
+import { Page, ReduxActionTypes } from "constants/ReduxActionConstants";
 import { Colors } from "constants/Colors";
 import { WidgetTypes } from "constants/WidgetConstants";
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { AppState } from "reducers";
-import {
-  getExistingActionNames,
-  getExistingPageNames,
-  getExistingWidgetNames,
-} from "selectors/entitiesSelector";
-import styled from "styled-components";
-import { removeSpecialChars } from "utils/helpers";
 
-export const searchHighlightSpanClassName = "token";
-export const searchTokenizationDelimiter = "!!";
+const searchHighlightSpanClassName = "token";
+const searchTokenizationDelimiter = "!!";
 
 const Wrapper = styled.div`
   overflow: hidden;
@@ -35,7 +31,7 @@ const Wrapper = styled.div`
   }
 `;
 
-export const replace = (
+const replace = (
   str: string,
   delimiter: string,
   className = "token",
@@ -70,8 +66,6 @@ export interface EntityNameProps {
   entityId: string;
   searchKeyword?: string;
   className?: string;
-  enterEditMode: () => void;
-  exitEditMode: () => void;
   nameTransformFn?: (input: string, limit?: number) => string;
 }
 
@@ -106,12 +100,22 @@ export const EntityName = forwardRef(
       setUpdatedName(name);
     }, [name, nameUpdateError]);
 
-    const existingPageNames: string[] = useSelector(getExistingPageNames);
-    const existingWidgetNames: string[] = useSelector(getExistingWidgetNames);
+    const existingPageNames: string[] = useSelector((state: AppState) =>
+      state.entities.pageList.pages.map((page: Page) => page.pageName),
+    );
 
+    const existingWidgetNames: string[] = useSelector((state: AppState) =>
+      Object.values(state.entities.canvasWidgets).map(
+        (widget) => widget.widgetName,
+      ),
+    );
     const dispatch = useDispatch();
 
-    const existingActionNames: string[] = useSelector(getExistingActionNames);
+    const existingActionNames: string[] = useSelector((state: AppState) =>
+      state.entities.actions.map(
+        (action: { config: { name: string } }) => action.config.name,
+      ),
+    );
 
     const hasNameConflict = useCallback(
       (
@@ -172,11 +176,29 @@ export const EntityName = forwardRef(
       return updatedName;
     }, [searchKeyword, updatedName]);
 
+    const exitEditMode = useCallback(() => {
+      dispatch({
+        type: ReduxActionTypes.END_EXPLORER_ENTITY_NAME_EDIT,
+      });
+    }, [dispatch]);
+
+    const enterEditMode = useCallback(
+      () =>
+        props.updateEntityName &&
+        dispatch({
+          type: ReduxActionTypes.INIT_EXPLORER_ENTITY_NAME_EDIT,
+          payload: {
+            id: props.entityId,
+          },
+        }),
+      [dispatch, props.entityId, props.updateEntityName],
+    );
+
     if (!props.isEditing)
       return (
         <Wrapper
           className={props.className}
-          onDoubleClick={props.enterEditMode}
+          onDoubleClick={enterEditMode}
           ref={ref}
         >
           {searchHighlightedName}
@@ -191,7 +213,7 @@ export const EntityName = forwardRef(
           isEditingDefault
           isInvalid={isInvalidName}
           minimal
-          onBlur={props.exitEditMode}
+          onBlur={exitEditMode}
           onTextChanged={handleAPINameChange}
           placeholder="Name"
           type="text"

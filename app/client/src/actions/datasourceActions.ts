@@ -6,8 +6,6 @@ import {
 import { CreateDatasourceConfig } from "api/DatasourcesApi";
 import { Datasource } from "entities/Datasource";
 import { PluginType } from "entities/Action";
-import { executeDatasourceQueryRequest } from "../api/DatasourcesApi";
-import { ResponseMeta } from "../api/ApiResponses";
 
 export const createDatasourceFromForm = (payload: CreateDatasourceConfig) => {
   return {
@@ -33,18 +31,15 @@ export type UpdateDatasourceSuccessAction = {
   type: string;
   payload: Datasource;
   redirect: boolean;
-  queryParams?: Record<string, string>;
 };
 
 export const updateDatasourceSuccess = (
   payload: Datasource,
   redirect = true,
-  queryParams = {},
 ): UpdateDatasourceSuccessAction => ({
   type: ReduxActionTypes.UPDATE_DATASOURCE_SUCCESS,
   payload,
   redirect,
-  queryParams,
 });
 
 export const redirectAuthorizationCode = (
@@ -62,12 +57,11 @@ export const redirectAuthorizationCode = (
   };
 };
 
-export const fetchDatasourceStructure = (id: string, ignoreCache?: boolean) => {
+export const fetchDatasourceStructure = (id: string) => {
   return {
     type: ReduxActionTypes.FETCH_DATASOURCE_STRUCTURE_INIT,
     payload: {
       id,
-      ignoreCache,
     },
   };
 };
@@ -118,14 +112,12 @@ export const deleteDatasource = (
   payload: Partial<Datasource>,
   onSuccess?: ReduxAction<unknown>,
   onError?: ReduxAction<unknown>,
-  onSuccessCallback?: () => void,
 ): ReduxActionWithCallbacks<Partial<Datasource>, unknown, unknown> => {
   return {
     type: ReduxActionTypes.DELETE_DATASOURCE_INIT,
     payload,
     onSuccess,
     onError,
-    onSuccessCallback,
   };
 };
 
@@ -151,28 +143,20 @@ export const fetchMockDatasources = () => {
   };
 };
 
-export interface addMockRequest
-  extends ReduxAction<{
-    name: string;
-    organizationId: string;
-    pluginId: string;
-    packageName: string;
-    isGeneratePageMode?: string;
-  }> {
-  extraParams?: any;
-}
-
 export const addMockDatasourceToOrg = (
   name: string,
   organizationId: string,
   pluginId: string,
   packageName: string,
-  isGeneratePageMode?: string,
-): addMockRequest => {
+): ReduxAction<{
+  name: string;
+  organizationId: string;
+  pluginId: string;
+  packageName: string;
+}> => {
   return {
     type: ReduxActionTypes.ADD_MOCK_DATASOURCES_INIT,
     payload: { name, packageName, pluginId, organizationId },
-    extraParams: { isGeneratePageMode },
   };
 };
 
@@ -196,40 +180,6 @@ export const getOAuthAccessToken = (datasourceId: string) => {
   return {
     type: ReduxActionTypes.SAAS_GET_OAUTH_ACCESS_TOKEN,
     payload: { datasourceId },
-  };
-};
-
-export type executeDatasourceQuerySuccessPayload = {
-  responseMeta: ResponseMeta;
-  data: {
-    body: Array<{ id: string; name: string }>;
-    headers: Record<string, string[]>;
-    statusCode: string;
-    isExecutionSuccess: boolean;
-  };
-};
-type errorPayload = unknown;
-
-export type executeDatasourceQueryReduxAction = ReduxActionWithCallbacks<
-  executeDatasourceQueryRequest,
-  executeDatasourceQuerySuccessPayload,
-  errorPayload
->;
-
-export const executeDatasourceQuery = ({
-  onErrorCallback,
-  onSuccessCallback,
-  payload,
-}: {
-  onErrorCallback?: (payload: errorPayload) => void;
-  onSuccessCallback?: (payload: executeDatasourceQuerySuccessPayload) => void;
-  payload: executeDatasourceQueryRequest;
-}): executeDatasourceQueryReduxAction => {
-  return {
-    type: ReduxActionTypes.EXECUTE_DATASOURCE_QUERY_INIT,
-    payload,
-    onErrorCallback,
-    onSuccessCallback,
   };
 };
 

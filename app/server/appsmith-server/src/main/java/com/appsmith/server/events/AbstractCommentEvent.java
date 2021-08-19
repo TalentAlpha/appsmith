@@ -10,5 +10,4 @@ public abstract class AbstractCommentEvent {
     private final Organization organization;
     private final Application application;
     private final String originHeader;
-    private final String pageName;
 }

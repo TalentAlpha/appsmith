@@ -8,7 +8,6 @@ import com.appsmith.server.domains.Notification;
 import com.appsmith.server.domains.QNotification;
 import com.appsmith.server.dtos.UpdateIsReadNotificationByIdDTO;
 import com.appsmith.server.dtos.UpdateIsReadNotificationDTO;
-import com.appsmith.server.events.CommentNotificationEvent;
 import com.appsmith.server.exceptions.AppsmithError;
 import com.appsmith.server.exceptions.AppsmithException;
 import com.appsmith.server.helpers.NumberUtils;
@@ -108,30 +107,27 @@ public class NotificationServiceImpl
      * Creates a notification for the provided comment which is under provided comment thread
      * @param comment
      * @param forUsername
-     * @param event
      * @return
      */
     @Override
-    public Mono<Notification> createNotification(Comment comment, CommentNotificationEvent event, String forUsername) {
+    public Mono<Notification> createNotification(Comment comment, String forUsername) {
         final CommentNotification notification = new CommentNotification();
         notification.setComment(comment);
         notification.setForUsername(forUsername);
         notification.setIsRead(false);
-        notification.setEvent(event);
         return repository.save(notification);
     }
 
     @Override
-    public Flux<Notification> createNotification(CommentThread commentThread, CommentNotificationEvent event, String authorUsername) {
+    public Flux<Notification> createNotification(CommentThread commentThread, String authorUserName) {
         if(!CollectionUtils.isEmpty(commentThread.getSubscribers())) {
             List<Notification> notificationMonoList = new ArrayList<>(commentThread.getSubscribers().size());
             for(String subscriberUserName: commentThread.getSubscribers()) {
-                if(!subscriberUserName.equals(authorUsername)) {
+                if(!subscriberUserName.equals(authorUserName)) {
                     CommentThreadNotification commentThreadNotification = new CommentThreadNotification();
                     commentThreadNotification.setCommentThread(commentThread);
                     commentThreadNotification.setForUsername(subscriberUserName);
                     commentThreadNotification.setIsRead(false);
-                    commentThreadNotification.setEvent(event);
                     notificationMonoList.add(commentThreadNotification);
                 }
             }

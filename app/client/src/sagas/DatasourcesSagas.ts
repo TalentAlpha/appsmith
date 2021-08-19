@@ -25,7 +25,6 @@ import {
   getDatasource,
   getDatasourceDraft,
   getPluginForm,
-  getGenerateCRUDEnabledPluginMap,
 } from "selectors/entitiesSelector";
 import {
   changeDatasource,
@@ -35,7 +34,6 @@ import {
   setDatsourceEditorMode,
   updateDatasourceSuccess,
   UpdateDatasourceSuccessAction,
-  executeDatasourceQueryReduxAction,
 } from "actions/datasourceActions";
 import { ApiResponse, GenericApiResponse } from "api/ApiResponses";
 import DatasourcesApi, { CreateDatasourceConfig } from "api/DatasourcesApi";
@@ -81,10 +79,6 @@ import { checkAndGetPluginFormConfigsSaga } from "sagas/PluginSagas";
 import { PluginType } from "entities/Action";
 import LOG_TYPE from "entities/AppsmithConsole/logtype";
 import { isDynamicValue } from "utils/DynamicBindingUtils";
-import { getQueryParams } from "../utils/AppsmithUtils";
-import { getGenerateTemplateFormURL } from "../constants/routes";
-import { GenerateCRUDEnabledPluginMap } from "../api/PluginApi";
-import { getIsGeneratePageInitiator } from "../utils/GenerateCrudUtil";
 
 function* fetchDatasourcesSaga() {
   try {
@@ -126,8 +120,8 @@ function* fetchMockDatasourcesSaga() {
   }
 }
 
-interface addMockDb
-  extends ReduxActionWithCallbacks<
+export function* addMockDbToDatasources(
+  actionPayload: ReduxActionWithCallbacks<
     {
       name: string;
       organizationId: string;
@@ -136,11 +130,8 @@ interface addMockDb
     },
     unknown,
     unknown
-  > {
-  extraParams?: any;
-}
-
-export function* addMockDbToDatasources(actionPayload: addMockDb) {
+  >,
+) {
   try {
     const {
       name,
@@ -148,14 +139,13 @@ export function* addMockDbToDatasources(actionPayload: addMockDb) {
       packageName,
       pluginId,
     } = actionPayload.payload;
-    const { isGeneratePageMode } = actionPayload.extraParams;
     const response: GenericApiResponse<any> = yield DatasourcesApi.addMockDbToDatasources(
       name,
       organizationId,
       pluginId,
       packageName,
     );
-    const isValidResponse: boolean = yield validateResponse(response);
+    const isValidResponse = yield validateResponse(response);
     if (isValidResponse) {
       yield put({
         type: ReduxActionTypes.ADD_MOCK_DATASOURCES_SUCCESS,
@@ -168,28 +158,11 @@ export function* addMockDbToDatasources(actionPayload: addMockDb) {
         type: ReduxActionTypes.FETCH_PLUGINS_REQUEST,
       });
       yield call(checkAndGetPluginFormConfigsSaga, response.data.pluginId);
-      const applicationId: string = yield select(getCurrentApplicationId);
-      const pageId: string = yield select(getCurrentPageId);
-      const isGeneratePageInitiator = getIsGeneratePageInitiator(
-        isGeneratePageMode,
+      const applicationId = yield select(getCurrentApplicationId);
+      const pageId = yield select(getCurrentPageId);
+      history.push(
+        INTEGRATION_EDITOR_URL(applicationId, pageId, INTEGRATION_TABS.ACTIVE),
       );
-      if (isGeneratePageInitiator) {
-        history.push(
-          `${getGenerateTemplateFormURL(applicationId, pageId)}?datasourceId=${
-            response.data.id
-          }`,
-        );
-      } else {
-        history.push(
-          INTEGRATION_EDITOR_URL(
-            applicationId,
-            pageId,
-            INTEGRATION_TABS.ACTIVE,
-            "",
-            getQueryParams(),
-          ),
-        );
-      }
     }
   } catch (error) {
     yield put({
@@ -224,7 +197,6 @@ export function* deleteDatasourceSaga(
             pageId,
             INTEGRATION_TABS.NEW,
             INTEGRATION_EDITOR_MODES.AUTO,
-            getQueryParams(),
           ),
         );
       }
@@ -285,8 +257,8 @@ function* updateDatasourceSaga(
   actionPayload: ReduxActionWithCallbacks<Datasource, unknown, unknown>,
 ) {
   try {
-    const queryParams = getQueryParams();
     const datasourcePayload = _.omit(actionPayload.payload, "name");
+
     const response: GenericApiResponse<Datasource> = yield DatasourcesApi.updateDatasource(
       datasourcePayload,
       datasourcePayload.id,
@@ -308,11 +280,7 @@ function* updateDatasourceSaga(
 
       // Dont redirect if action payload has an onSuccess
       yield put(
-        updateDatasourceSuccess(
-          response.data,
-          !actionPayload.onSuccess,
-          queryParams,
-        ),
+        updateDatasourceSuccess(response.data, !actionPayload.onSuccess),
       );
       yield put(
         setDatsourceEditorMode({ id: datasourcePayload.id, viewMode: true }),
@@ -655,12 +623,7 @@ function* changeDatasourceSaga(actionPayload: ReduxAction<Datasource>) {
     DATA_SOURCES_EDITOR_ID_URL(applicationId, pageId, datasource.id)
   )
     history.push(
-      DATA_SOURCES_EDITOR_ID_URL(
-        applicationId,
-        pageId,
-        datasource.id,
-        getQueryParams(),
-      ),
+      DATA_SOURCES_EDITOR_ID_URL(applicationId, pageId, datasource.id),
     );
 }
 
@@ -746,29 +709,9 @@ function* storeAsDatasourceSaga() {
 function* updateDatasourceSuccessSaga(action: UpdateDatasourceSuccessAction) {
   const state = yield select();
   const actionRouteInfo = _.get(state, "ui.datasourcePane.actionRouteInfo");
-  const applicationId: string = yield select(getCurrentApplicationId);
-  const pageId: string = yield select(getCurrentPageId);
-  const generateCRUDSupportedPlugin: GenerateCRUDEnabledPluginMap = yield select(
-    getGenerateCRUDEnabledPluginMap,
-  );
   const updatedDatasource = action.payload;
 
-  const { queryParams = {} } = action;
-
-  const isGeneratePageInitiator = getIsGeneratePageInitiator(
-    queryParams.isGeneratePageMode,
-  );
   if (
-    isGeneratePageInitiator &&
-    updatedDatasource.pluginId &&
-    generateCRUDSupportedPlugin[updatedDatasource.pluginId]
-  ) {
-    history.push(
-      `${getGenerateTemplateFormURL(applicationId, pageId)}?datasourceId=${
-        updatedDatasource.id
-      }`,
-    );
-  } else if (
     actionRouteInfo &&
     updatedDatasource.id === actionRouteInfo.datasourceId &&
     action.redirect
@@ -787,14 +730,11 @@ function* updateDatasourceSuccessSaga(action: UpdateDatasourceSuccessAction) {
   });
 }
 
-function* fetchDatasourceStructureSaga(
-  action: ReduxAction<{ id: string; ignoreCache: boolean }>,
-) {
+function* fetchDatasourceStructureSaga(action: ReduxAction<{ id: string }>) {
   const datasource = yield select(getDatasource, action.payload.id);
   try {
     const response: GenericApiResponse<any> = yield DatasourcesApi.fetchDatasourceStructure(
       action.payload.id,
-      action.payload.ignoreCache,
     );
     const isValidResponse = yield validateResponse(response, false);
     if (isValidResponse) {
@@ -901,39 +841,6 @@ function* refreshDatasourceStructure(action: ReduxAction<{ id: string }>) {
   }
 }
 
-function* executeDatasourceQuerySaga(
-  action: executeDatasourceQueryReduxAction,
-) {
-  try {
-    const response: GenericApiResponse<any> = yield DatasourcesApi.executeDatasourceQuery(
-      action.payload,
-    );
-    const isValidResponse: boolean = yield validateResponse(response);
-    if (isValidResponse) {
-      yield put({
-        type: ReduxActionTypes.EXECUTE_DATASOURCE_QUERY_SUCCESS,
-        payload: {
-          data: response.data,
-          datasourceId: action.payload.datasourceId,
-        },
-      });
-    }
-    if (action.onSuccessCallback) {
-      action.onSuccessCallback(response);
-    }
-  } catch (error) {
-    yield put({
-      type: ReduxActionErrorTypes.EXECUTE_DATASOURCE_QUERY_ERROR,
-      payload: {
-        error,
-      },
-    });
-    if (action.onErrorCallback) {
-      action.onErrorCallback(error);
-    }
-  }
-}
-
 export function* watchDatasourcesSagas() {
   yield all([
     takeEvery(ReduxActionTypes.FETCH_DATASOURCES_INIT, fetchDatasourcesSaga),
@@ -979,10 +886,6 @@ export function* watchDatasourcesSagas() {
     takeEvery(
       ReduxActionTypes.REFRESH_DATASOURCE_STRUCTURE_INIT,
       refreshDatasourceStructure,
-    ),
-    takeEvery(
-      ReduxActionTypes.EXECUTE_DATASOURCE_QUERY_INIT,
-      executeDatasourceQuerySaga,
     ),
     // Intercepting the redux-form change actionType
     takeEvery(ReduxFormActionTypes.VALUE_CHANGE, formValueChangeSaga),

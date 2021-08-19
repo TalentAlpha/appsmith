@@ -1,7 +1,7 @@
 import { Collapse, Position } from "@blueprintjs/core";
 import { Classes } from "components/ads/common";
 import Icon, { IconName, IconSize } from "components/ads/Icon";
-import { Log, Message, Severity, SourceEntity } from "entities/AppsmithConsole";
+import { Message, Severity, SourceEntity } from "entities/AppsmithConsole";
 import React, { useCallback, useState } from "react";
 import ReactJson from "react-json-view";
 import styled from "styled-components";
@@ -16,16 +16,9 @@ import Text, { TextType } from "components/ads/Text";
 import { getTypographyByKey } from "constants/DefaultTheme";
 import AnalyticsUtil from "utils/AnalyticsUtil";
 import TooltipComponent from "components/ads/Tooltip";
-import {
-  createMessage,
-  DEBUGGER_INTERCOM_TEXT,
-  TROUBLESHOOT_ISSUE,
-} from "constants/messages";
-import { PropertyEvaluationErrorType } from "utils/DynamicBindingUtils";
-import { getAppsmithConfigs } from "configs";
-const { intercomAppID } = getAppsmithConfigs();
+import { createMessage, TROUBLESHOOT_ISSUE } from "constants/messages";
 
-const Wrapper = styled.div<{ collapsed: boolean }>`
+const Log = styled.div<{ collapsed: boolean }>`
   padding: 9px 30px;
   display: flex;
 
@@ -65,8 +58,7 @@ const Wrapper = styled.div<{ collapsed: boolean }>`
   .debugger-description {
     display: inline-block;
     margin-left: 7px;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+
     .debugger-toggle {
       ${(props) => props.collapsed && `transform: rotate(-90deg);`}
     }
@@ -150,7 +142,7 @@ const MessageWrapper = styled.div`
   padding-top: ${(props) => props.theme.spaces[1]}px;
 `;
 
-export const getLogItemProps = (e: Log) => {
+export const getLogItemProps = (e: Message) => {
   return {
     icon: SeverityIcon[e.severity] as IconName,
     iconColor: SeverityIconColor[e.severity],
@@ -178,7 +170,7 @@ type LogItemProps = {
   id?: string;
   source?: SourceEntity;
   expand?: boolean;
-  messages?: Message[];
+  messages: Message["messages"];
 };
 
 function LogItem(props: LogItemProps) {
@@ -196,47 +188,21 @@ function LogItem(props: LogItemProps) {
   const showToggleIcon = props.state || props.messages;
   const dispatch = useDispatch();
 
-  const onLogClick = useCallback((e, error?: Message) => {
+  const openHelpModal = useCallback((e, message?: string) => {
     e.stopPropagation();
+    const text = message || props.text;
 
-    // If the error message was clicked we use that, else if the wand icon is clicked
-    // we use the first error "Message" in the list
-    // This is of type Message { message: string; type?: ErrorType; }
-    const focusedError =
-      error ||
-      (props.messages && props.messages.length ? props.messages[0] : undefined);
-    const text = focusedError?.message || props.text;
-
-    switch (focusedError?.type) {
-      case PropertyEvaluationErrorType.PARSE:
-      case PropertyEvaluationErrorType.LINT:
-        // Search google for the error message
-        window.open("http://google.com/search?q=" + text);
-        break;
-      case PropertyEvaluationErrorType.VALIDATION:
-        // Search through the omnibar
-        AnalyticsUtil.logEvent("OPEN_OMNIBAR", {
-          source: "DEBUGGER",
-          searchTerm: text,
-          errorType: PropertyEvaluationErrorType.VALIDATION,
-        });
-        dispatch(setGlobalSearchQuery(text || ""));
-        dispatch(toggleShowGlobalSearchModal());
-        break;
-      default:
-        // Prefill the error in intercom
-        if (intercomAppID && window.Intercom) {
-          window.Intercom(
-            "showNewMessage",
-            createMessage(DEBUGGER_INTERCOM_TEXT, text),
-          );
-        }
-    }
+    AnalyticsUtil.logEvent("OPEN_OMNIBAR", {
+      source: "DEBUGGER",
+      searchTerm: text,
+    });
+    dispatch(setGlobalSearchQuery(text || ""));
+    dispatch(toggleShowGlobalSearchModal());
   }, []);
   const messages = props.messages || [];
 
   return (
-    <Wrapper
+    <Log
       className={props.severity}
       collapsed={!isOpen}
       onClick={() => setIsOpen(!isOpen)}
@@ -278,7 +244,7 @@ function LogItem(props: LogItemProps) {
               className={Classes.ICON}
               fillColor={props.iconColor}
               name={"wand"}
-              onClick={onLogClick}
+              onClick={openHelpModal}
               size={IconSize.MEDIUM}
             />
           </TooltipComponent>
@@ -291,7 +257,7 @@ function LogItem(props: LogItemProps) {
                 <MessageWrapper key={e.message}>
                   <span
                     className="debugger-message"
-                    onClick={(event) => onLogClick(event, e)}
+                    onClick={(event) => openHelpModal(event, e.message)}
                   >
                     {e.message}
                   </span>
@@ -317,7 +283,7 @@ function LogItem(props: LogItemProps) {
           uiComponent={DebuggerLinkUI.ENTITY_NAME}
         />
       )}
-    </Wrapper>
+    </Log>
   );
 }
 

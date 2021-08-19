@@ -3,7 +3,6 @@ import { get } from "lodash";
 import { CommentThread, Comment } from "entities/Comments/CommentsInterfaces";
 import { options as filterOptions } from "comments/AppComments/AppCommentsFilterPopover";
 import { matchBuilderPath, matchViewerPath } from "constants/routes";
-import getFeatureFlags from "utils/featureFlags";
 
 export const refCommentThreadsSelector = (
   refId: string,
@@ -27,14 +26,7 @@ export const commentModeSelector = (state: AppState) => {
   const pathName = window.location.pathname;
   const onEditorOrViewerPage =
     matchBuilderPath(pathName) || matchViewerPath(pathName);
-
-  if ((window as any).isCommentModeForced) return true;
-
-  return (
-    state.ui.comments?.isCommentMode &&
-    !!onEditorOrViewerPage &&
-    areCommentsEnabledForUserAndApp()
-  );
+  return state.ui.comments?.isCommentMode && !!onEditorOrViewerPage;
 };
 
 export const isUnsubscribedSelector = (state: AppState) =>
@@ -44,7 +36,8 @@ export const applicationCommentsSelector = (applicationId: string) => (
   state: AppState,
 ) => state.ui.comments.applicationCommentThreadsByRef[applicationId];
 
-export const areCommentsEnabledForUserAndApp = () => getFeatureFlags().COMMENT;
+export const areCommentsEnabledForUserAndApp = (state: AppState) =>
+  state.ui.comments?.areCommentsEnabled;
 
 /**
  * Comments are stored as a map of refs (for example widgetIds)
@@ -166,4 +159,4 @@ export const visibleCommentThreadSelector = (state: AppState) =>
   state.ui.comments.visibleCommentThreadId;
 
 export const isIntroCarouselVisibleSelector = (state: AppState) =>
-  state.ui.comments.isIntroCarouselVisible && areCommentsEnabledForUserAndApp();
+  state.ui.comments.isIntroCarouselVisible;

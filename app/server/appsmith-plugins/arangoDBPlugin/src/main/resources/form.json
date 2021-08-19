@@ -120,7 +120,6 @@
           "label": "Base64 Encoded CA Certificate String",
           "configProperty": "datasourceConfiguration.connection.ssl.caCertificateFile.base64Content",
           "controlType": "INPUT_TEXT",
-          "dataType": "PASSWORD",
           "encrypted": true,
           "hidden": {
             "path": "datasourceConfiguration.connection.ssl.caCertificateType",

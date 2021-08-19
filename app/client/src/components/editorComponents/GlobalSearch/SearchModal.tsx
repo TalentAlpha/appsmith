@@ -14,7 +14,7 @@ const StyledDocsSearchModal = styled.div`
       justify-content: center;
       .${Classes.OVERLAY_CONTENT} {
         overflow: hidden;
-        top: 8vh;
+        top: 10vh;
       }
     }
   }

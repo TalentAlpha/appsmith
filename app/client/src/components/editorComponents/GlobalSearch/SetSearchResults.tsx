@@ -3,34 +3,23 @@ import { connectHits } from "react-instantsearch-dom";
 import { Hit as IHit } from "react-instantsearch-core";
 import { debounce } from "lodash";
 import { DocSearchItem, SearchItem, SEARCH_ITEM_TYPES } from "./utils";
-import { SEARCH_CATEGORY_ID } from "./utils";
 
 type Props = {
-  setDocumentationSearchResults: (
-    item: DocSearchItem | any,
-    categoryId: SEARCH_CATEGORY_ID,
-  ) => void;
-  categoryId: SEARCH_CATEGORY_ID;
+  setDocumentationSearchResults: (item: DocSearchItem) => void;
   hits: IHit[];
 };
 
-function SearchResults({
-  categoryId,
-  hits,
-  setDocumentationSearchResults,
-}: Props) {
-  const debouncedSetter = useCallback(
+function SearchResults({ hits, setDocumentationSearchResults }: Props) {
+  const debounsedSetter = useCallback(
     debounce(setDocumentationSearchResults, 100),
     [],
   );
 
   useEffect(() => {
-    const filteredHits = hits.filter((doc: SearchItem) => {
-      return categoryId === SEARCH_CATEGORY_ID.SNIPPETS
-        ? doc.body && doc.body.hasOwnProperty("snippet")
-        : doc.kind === SEARCH_ITEM_TYPES.document;
-    });
-    debouncedSetter(filteredHits as any, categoryId);
+    const filteredHits = hits.filter(
+      (doc: SearchItem) => doc.kind === SEARCH_ITEM_TYPES.document,
+    );
+    debounsedSetter(filteredHits as any);
   }, [hits]);
 
   return null;

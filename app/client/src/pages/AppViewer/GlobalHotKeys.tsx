@@ -1,10 +1,13 @@
 import React from "react";
+import { connect } from "react-redux";
 import { Hotkey, Hotkeys } from "@blueprintjs/core";
 import { HotkeysTarget } from "@blueprintjs/core/lib/esnext/components/hotkeys/hotkeysTarget.js";
+import { setCommentMode as setCommentModeAction } from "actions/commentActions";
 
 import { setCommentModeInUrl } from "pages/Editor/ToggleModeButton";
 
 type Props = {
+  resetCommentMode: () => void;
   children: React.ReactNode;
 };
 
@@ -19,7 +22,7 @@ class GlobalHotKeys extends React.Component<Props> {
           group="Canvas"
           label="Reset"
           onKeyDown={(e: any) => {
-            setCommentModeInUrl(false);
+            this.props.resetCommentMode();
             e.preventDefault();
           }}
         />
@@ -27,7 +30,7 @@ class GlobalHotKeys extends React.Component<Props> {
           combo="v"
           global
           label="View Mode"
-          onKeyDown={() => setCommentModeInUrl(false)}
+          onKeyDown={this.props.resetCommentMode}
         />
         <Hotkey
           combo="c"
@@ -44,4 +47,10 @@ class GlobalHotKeys extends React.Component<Props> {
   }
 }
 
-export default GlobalHotKeys;
+const mapDispatchToProps = (dispatch: any) => {
+  return {
+    resetCommentMode: () => dispatch(setCommentModeAction(false)),
+  };
+};
+
+export default connect(null, mapDispatchToProps)(GlobalHotKeys);

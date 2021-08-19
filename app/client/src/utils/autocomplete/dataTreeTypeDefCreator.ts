@@ -1,4 +1,4 @@
-import { DataTree, ENTITY_TYPE } from "entities/DataTree/dataTreeFactory";
+import { DataTreeEntity } from "entities/DataTree/dataTreeFactory";
 import _ from "lodash";
 import { entityDefinitions } from "utils/autocomplete/EntityDefinitions";
 import { getType, Types } from "utils/TypeHelpers";
@@ -9,7 +9,6 @@ import {
   isTrueObject,
   isWidget,
 } from "workers/evaluationUtils";
-import { DataTreeDefEntityInformation } from "utils/autocomplete/TernServer";
 
 // When there is a complex data type, we store it in extra def and refer to it
 // in the def
@@ -22,48 +21,35 @@ let extraDefs: any = {};
 // eg DATA_TREE.WIDGET.TABLE_WIDGET.Table1
 // or DATA_TREE.ACTION.ACTION.Api1
 export const dataTreeTypeDefCreator = (
-  dataTree: DataTree,
-): { def: Def; entityInfo: Map<string, DataTreeDefEntityInformation> } => {
-  const def: any = {
-    "!name": "DATA_TREE",
-  };
-  const entityMap: Map<string, DataTreeDefEntityInformation> = new Map();
-  Object.entries(dataTree).forEach(([entityName, entity]) => {
-    if (isWidget(entity)) {
-      const widgetType = entity.type;
-      if (widgetType in entityDefinitions) {
-        const definition = _.get(entityDefinitions, widgetType);
-        if (_.isFunction(definition)) {
-          def[entityName] = definition(entity);
-        } else {
-          def[entityName] = definition;
-        }
-        flattenDef(def, entityName);
-        entityMap.set(entityName, {
-          type: ENTITY_TYPE.WIDGET,
-          subType: widgetType,
-        });
+  entity: DataTreeEntity,
+  entityName: string,
+): { def: Def; name: string } => {
+  const def: any = {};
+  if (isWidget(entity)) {
+    const widgetType = entity.type;
+    if (widgetType in entityDefinitions) {
+      const definition = _.get(entityDefinitions, widgetType);
+      if (_.isFunction(definition)) {
+        def[entityName] = definition(entity);
+      } else {
+        def[entityName] = definition;
       }
-    } else if (isAction(entity)) {
-      def[entityName] = entityDefinitions.ACTION(entity);
       flattenDef(def, entityName);
-      entityMap.set(entityName, {
-        type: ENTITY_TYPE.ACTION,
-        subType: "ACTION",
-      });
-    } else if (isAppsmithEntity(entity)) {
-      def.appsmith = generateTypeDef(_.omit(entity, "ENTITY_TYPE"));
-      entityMap.set("appsmith", {
-        type: ENTITY_TYPE.APPSMITH,
-        subType: ENTITY_TYPE.APPSMITH,
-      });
+      def["!name"] = `DATA_TREE.WIDGET.${widgetType}.${entityName}`;
     }
-    if (Object.keys(extraDefs)) {
-      def["!define"] = { ...extraDefs };
-      extraDefs = {};
-    }
-  });
-  return { def, entityInfo: entityMap };
+  } else if (isAction(entity)) {
+    def[entityName] = entityDefinitions.ACTION(entity);
+    flattenDef(def, entityName);
+    def["!name"] = `DATA_TREE.ACTION.ACTION.${entityName}`;
+  } else if (isAppsmithEntity(entity)) {
+    def["!name"] = "DATA_TREE.APPSMITH.APPSMITH";
+    def.appsmith = generateTypeDef(_.omit(entity, "ENTITY_TYPE"));
+  }
+  if (Object.keys(extraDefs)) {
+    def["!define"] = { ...extraDefs };
+    extraDefs = {};
+  }
+  return { def, name: def["!name"] };
 };
 
 export function generateTypeDef(

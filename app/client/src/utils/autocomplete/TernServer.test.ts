@@ -1,13 +1,7 @@
-import TernServer, {
-  AutocompleteDataType,
-  Completion,
-  createCompletionHeader,
-  DataTreeDefEntityInformation,
-} from "./TernServer";
+import TernServer, { Completion, createCompletionHeader } from "./TernServer";
 import { MockCodemirrorEditor } from "../../../test/__mocks__/CodeMirrorEditorMock";
 import { ENTITY_TYPE } from "entities/DataTree/dataTreeFactory";
 import _ from "lodash";
-import { WidgetTypes } from "constants/WidgetConstants";
 
 describe("Tern server", () => {
   it("Check whether the correct value is being sent to tern", () => {
@@ -167,13 +161,9 @@ describe("Tern server", () => {
 });
 
 describe("Tern server sorting", () => {
-  const defEntityInformation: Map<
-    string,
-    DataTreeDefEntityInformation
-  > = new Map();
   const contextCompletion: Completion = {
     text: "context",
-    type: AutocompleteDataType.STRING,
+    type: "STRING",
     origin: "[doc]",
     data: {
       doc: "",
@@ -182,75 +172,52 @@ describe("Tern server sorting", () => {
 
   const sameEntityCompletion: Completion = {
     text: "sameEntity.tableData",
-    type: AutocompleteDataType.ARRAY,
-    origin: "DATA_TREE",
+    type: "ARRAY",
+    origin: "DATA_TREE.WIDGET.TABLE_WIDGET.sameEntity",
     data: {
       doc: "",
     },
   };
-  defEntityInformation.set("sameEntity", {
-    type: ENTITY_TYPE.WIDGET,
-    subType: WidgetTypes.TABLE_WIDGET,
-  });
 
   const sameTypeCompletion: Completion = {
     text: "sameType.selectedRow",
-    type: AutocompleteDataType.OBJECT,
-    origin: "DATA_TREE",
+    type: "OBJECT",
+    origin: "DATA_TREE.WIDGET.TABLE_WIDGET.sameType",
     data: {
       doc: "",
     },
   };
-  defEntityInformation.set("sameType", {
-    type: ENTITY_TYPE.WIDGET,
-    subType: WidgetTypes.TABLE_WIDGET,
-  });
 
   const diffTypeCompletion: Completion = {
     text: "diffType.tableData",
-    type: AutocompleteDataType.ARRAY,
-    origin: "DATA_TREE.WIDGET",
+    type: "ARRAY",
+    origin: "DATA_TREE.WIDGET.TABLE_WIDGET.diffType",
     data: {
       doc: "",
     },
   };
-
-  defEntityInformation.set("diffType", {
-    type: ENTITY_TYPE.WIDGET,
-    subType: WidgetTypes.TABLE_WIDGET,
-  });
 
   const sameTypeDiffEntityTypeCompletion: Completion = {
     text: "diffEntity.data",
-    type: AutocompleteDataType.OBJECT,
-    origin: "DATA_TREE",
+    type: "OBJECT",
+    origin: "DATA_TREE.ACTION.ACTION.diffEntity",
     data: {
       doc: "",
     },
   };
-
-  defEntityInformation.set("diffEntity", {
-    type: ENTITY_TYPE.ACTION,
-    subType: ENTITY_TYPE.ACTION,
-  });
 
   const dataTreeCompletion: Completion = {
     text: "otherDataTree",
-    type: AutocompleteDataType.STRING,
-    origin: "DATA_TREE",
+    type: "STRING",
+    origin: "DATA_TREE.WIDGET.TEXT_WIDGET.otherDataTree",
     data: {
       doc: "",
     },
   };
 
-  defEntityInformation.set("otherDataTree", {
-    type: ENTITY_TYPE.WIDGET,
-    subType: WidgetTypes.TEXT_WIDGET,
-  });
-
   const functionCompletion: Completion = {
     text: "otherDataFunction",
-    type: AutocompleteDataType.FUNCTION,
+    type: "FUNCTION",
     origin: "DATA_TREE.APPSMITH.FUNCTIONS",
     data: {
       doc: "",
@@ -259,7 +226,7 @@ describe("Tern server sorting", () => {
 
   const ecmascriptCompletion: Completion = {
     text: "otherJS",
-    type: AutocompleteDataType.OBJECT,
+    type: "OBJECT",
     origin: "ecmascript",
     data: {
       doc: "",
@@ -268,7 +235,7 @@ describe("Tern server sorting", () => {
 
   const libCompletion: Completion = {
     text: "libValue",
-    type: AutocompleteDataType.OBJECT,
+    type: "OBJECT",
     origin: "LIB/lodash",
     data: {
       doc: "",
@@ -277,7 +244,7 @@ describe("Tern server sorting", () => {
 
   const unknownCompletion: Completion = {
     text: "unknownSuggestion",
-    type: AutocompleteDataType.UNKNOWN,
+    type: "UNKNOWN",
     origin: "unknown",
     data: {
       doc: "",
@@ -301,9 +268,8 @@ describe("Tern server sorting", () => {
     TernServer.setEntityInformation({
       entityName: "sameEntity",
       entityType: ENTITY_TYPE.WIDGET,
-      expectedType: AutocompleteDataType.OBJECT,
+      expectedType: "object",
     });
-    TernServer.defEntityInformation = defEntityInformation;
     const sortedCompletions = TernServer.sortCompletions(
       _.shuffle(completions),
       true,

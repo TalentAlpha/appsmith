@@ -146,6 +146,16 @@ const datasourceReducer = createReducer(initialState, {
       list: action.payload,
     };
   },
+  [ReduxActionTypes.PREFILL_DATASOURCE]: (
+    state: DatasourceDataState,
+    action: ReduxAction<Datasource[]>,
+  ) => {
+    return {
+      ...state,
+      loading: false,
+      list: action.payload,
+    };
+  },
   [ReduxActionTypes.TEST_DATASOURCE_SUCCESS]: (
     state: DatasourceDataState,
     action: ReduxAction<{

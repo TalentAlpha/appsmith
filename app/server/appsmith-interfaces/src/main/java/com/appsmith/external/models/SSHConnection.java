@@ -11,7 +11,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class SSHConnection implements AppsmithDomain {
+public class SSHConnection {
 
     public enum AuthType {
         IDENTITY_FILE, PASSWORD

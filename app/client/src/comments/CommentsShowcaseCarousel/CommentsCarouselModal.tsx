@@ -1,12 +1,8 @@
 import React from "react";
 import ModalComponent from "components/designSystems/blueprint/ModalComponent";
 import { Layers } from "constants/Layers";
-import { useDispatch } from "react-redux";
-import { hideCommentsIntroCarousel } from "actions/commentActions";
 
 function ShowcaseCarouselModal({ children }: { children: React.ReactNode }) {
-  const dispatch = useDispatch();
-
   return (
     <ModalComponent
       bottom={25}
@@ -17,7 +13,7 @@ function ShowcaseCarouselModal({ children }: { children: React.ReactNode }) {
       isOpen
       left={25}
       onClose={() => {
-        dispatch(hideCommentsIntroCarousel());
+        // TODO (rishabh) handle close
       }}
       overlayClassName="comments-onboarding-carousel"
       portalClassName="comments-onboarding-carousel-portal"

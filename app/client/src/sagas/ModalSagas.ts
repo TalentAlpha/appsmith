@@ -18,7 +18,6 @@ import {
   ReduxActionErrorTypes,
   ReduxActionTypes,
   ReduxAction,
-  WidgetReduxActionTypes,
 } from "constants/ReduxActionConstants";
 
 import {
@@ -52,7 +51,7 @@ export function* createModalSaga(action: ReduxAction<{ modalName: string }>) {
       tabId: "",
     };
     yield put({
-      type: WidgetReduxActionTypes.WIDGET_ADD_CHILD,
+      type: ReduxActionTypes.WIDGET_ADD_CHILD,
       payload: props,
     });
 
@@ -200,6 +199,6 @@ export default function* modalSagas() {
     takeLatest(ReduxActionTypes.CREATE_MODAL_INIT, createModalSaga),
     takeLatest(ReduxActionTypes.SHOW_MODAL, showModalSaga),
     takeLatest(ReduxActionTypes.SHOW_MODAL_BY_NAME, showModalByNameSaga),
-    takeLatest(WidgetReduxActionTypes.WIDGET_CHILD_ADDED, showIfModalSaga),
+    takeLatest(ReduxActionTypes.WIDGET_CHILD_ADDED, showIfModalSaga),
   ]);
 }

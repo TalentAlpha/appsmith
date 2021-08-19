@@ -3,7 +3,6 @@ import { CommonComponentProps } from "./common";
 import { Position, Tooltip, PopperBoundary } from "@blueprintjs/core";
 import { GLOBAL_STYLE_TOOLTIP_CLASSNAME } from "globalStyles/tooltip";
 import { Modifiers } from "popper.js";
-import { noop } from "lodash";
 
 type Variant = "dark" | "light";
 
@@ -22,7 +21,6 @@ type TooltipProps = CommonComponentProps & {
   minimal?: boolean;
   modifiers?: Modifiers;
   isOpen?: boolean;
-  onOpening?: typeof noop;
 };
 
 const portalContainer = document.getElementById("tooltip-root");
@@ -41,7 +39,6 @@ function TooltipComponent(props: TooltipProps) {
         preventOverflow: { enabled: false },
         ...props.modifiers,
       }}
-      onOpening={props.onOpening}
       openOnTargetFocus={props.openOnTargetFocus}
       popoverClassName={GLOBAL_STYLE_TOOLTIP_CLASSNAME}
       portalContainer={portalContainer as HTMLDivElement}

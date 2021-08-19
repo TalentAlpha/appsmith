@@ -85,8 +85,8 @@
       "color": "0075ca",
       "description": "Improvements or additions to documentation"
     },
-    "Select Widget": {
-      "name": "Select Widget",
+    "Dropdown Widget": {
+      "name": "Dropdown Widget",
       "color": "0c669e",
       "description": ""
     },
@@ -569,7 +569,7 @@
                 "value": true
               },
               {
-                "label": "Select Widget",
+                "label": "Dropdown Widget",
                 "type": "hasLabel",
                 "value": true
               },
@@ -645,26 +645,6 @@
               },
               {
                 "label": "iFrame",
-                "type": "hasLabel",
-                "value": true
-              },
-              {
-                "label": "Menu Button",
-                "type": "hasLabel",
-                "value": true
-              },
-              {
-                "label": "Divider",
-                "type": "hasLabel",
-                "value": true
-              },
-              {
-                "label": "Rating",
-                "type": "hasLabel",
-                "value": true
-              },
-              {
-                "label": "Widget Validation",
                 "type": "hasLabel",
                 "value": true
               },

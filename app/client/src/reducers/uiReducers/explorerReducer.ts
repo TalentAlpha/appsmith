@@ -46,11 +46,11 @@ const setUpdatingDatasourceEntity = (
 
 const explorerReducer = createReducer(initialState, {
   [ReduxActionTypes.FETCH_PAGE_INIT]: setUpdatingEntity,
-  [ReduxActionErrorTypes.FETCH_PAGE_ERROR]: setEntityUpdateError,
+  [ReduxActionTypes.FETCH_PAGE_ERROR]: setEntityUpdateError,
   [ReduxActionTypes.FETCH_PAGE_SUCCESS]: setEntityUpdateSuccess,
 
   [ReduxActionTypes.CLONE_PAGE_INIT]: setUpdatingEntity,
-  [ReduxActionErrorTypes.CLONE_PAGE_ERROR]: setEntityUpdateError,
+  [ReduxActionTypes.CLONE_PAGE_ERROR]: setEntityUpdateError,
   [ReduxActionTypes.CLONE_PAGE_SUCCESS]: setEntityUpdateSuccess,
 
   [ReduxActionTypes.MOVE_ACTION_INIT]: setUpdatingEntity,

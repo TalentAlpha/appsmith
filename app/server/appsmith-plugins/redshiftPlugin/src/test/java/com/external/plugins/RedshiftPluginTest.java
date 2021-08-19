@@ -382,8 +382,8 @@ public class RedshiftPluginTest {
                     assertEquals(DatasourceStructure.TableType.TABLE, campusTable.getType());
                     assertArrayEquals(
                             new DatasourceStructure.Column[]{
-                                    new DatasourceStructure.Column("id", "timestamptz", "now()", false),
-                                    new DatasourceStructure.Column("name", "timestamptz", "now()", false)
+                                    new DatasourceStructure.Column("id", "timestamptz", "now()"),
+                                    new DatasourceStructure.Column("name", "timestamptz", "now()")
                             },
                             campusTable.getColumns().toArray()
                     );
@@ -394,9 +394,9 @@ public class RedshiftPluginTest {
                     assertEquals(DatasourceStructure.TableType.TABLE, possessionsTable.getType());
                     assertArrayEquals(
                             new DatasourceStructure.Column[]{
-                                    new DatasourceStructure.Column("id", "int4", null, false),
-                                    new DatasourceStructure.Column("title", "varchar", null, false),
-                                    new DatasourceStructure.Column("user_id", "int4", null, false)
+                                    new DatasourceStructure.Column("id", "int4", null),
+                                    new DatasourceStructure.Column("title", "varchar", null),
+                                    new DatasourceStructure.Column("user_id", "int4", null),
                             },
                             possessionsTable.getColumns().toArray()
                     );
@@ -435,9 +435,9 @@ public class RedshiftPluginTest {
                     assertArrayEquals(
                             new DatasourceStructure.Column[]{
                                     new DatasourceStructure.Column("id", "int4", "\"identity\"(101507, " +
-                                            "0, '1,1'::text)", true),
-                                    new DatasourceStructure.Column("username", "varchar", null, false),
-                                    new DatasourceStructure.Column("password", "varchar", null, false)
+                                            "0, '1,1'::text)"),
+                                    new DatasourceStructure.Column("username", "varchar", null),
+                                    new DatasourceStructure.Column("password", "varchar", null)
                             },
                             usersTable.getColumns().toArray()
                     );

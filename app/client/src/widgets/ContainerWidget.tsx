@@ -14,11 +14,9 @@ import ContainerComponent, {
 } from "components/designSystems/appsmith/ContainerComponent";
 import { WidgetType, WidgetTypes } from "constants/WidgetConstants";
 import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import WidgetsMultiSelectBox from "pages/Editor/WidgetsMultiSelectBox";
 import { CanvasSelectionArena } from "pages/common/CanvasSelectionArena";
-import { CanvasDraggingArena } from "pages/common/CanvasDraggingArena";
-import { getCanvasSnapRows } from "utils/WidgetPropsUtils";
 class ContainerWidget extends BaseWidget<
   ContainerWidgetProps<WidgetProps>,
   WidgetState
@@ -42,7 +40,7 @@ class ContainerWidget extends BaseWidget<
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             helpText: "Controls the visibility of the widget",
@@ -52,7 +50,7 @@ class ContainerWidget extends BaseWidget<
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "shouldScrollContents",
@@ -124,30 +122,12 @@ class ContainerWidget extends BaseWidget<
   };
 
   renderAsContainerComponent(props: ContainerWidgetProps<WidgetProps>) {
-    const snapRows = getCanvasSnapRows(props.bottomRow, props.canExtend);
     return (
       <ContainerComponent {...props}>
-        {props.type === "CANVAS_WIDGET" && (
-          <>
-            <CanvasDraggingArena
-              {...this.getSnapSpaces()}
-              canExtend={props.canExtend}
-              dropDisabled={!!props.dropDisabled}
-              noPad={this.props.noPad}
-              snapRows={snapRows}
-              widgetId={props.widgetId}
-            />
-            <CanvasSelectionArena
-              {...this.getSnapSpaces()}
-              canExtend={props.canExtend}
-              parentId={props.parentId}
-              snapRows={snapRows}
-              widgetId={props.widgetId}
-            />
-          </>
+        {this.props.widgetId === MAIN_CONTAINER_WIDGET_ID && (
+          <CanvasSelectionArena widgetId={MAIN_CONTAINER_WIDGET_ID} />
         )}
         <WidgetsMultiSelectBox
-          {...this.getSnapSpaces()}
           widgetId={this.props.widgetId}
           widgetType={this.props.type}
         />

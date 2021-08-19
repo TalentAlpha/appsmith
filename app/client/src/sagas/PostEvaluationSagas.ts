@@ -1,8 +1,6 @@
-import { ENTITY_TYPE, Log } from "entities/AppsmithConsole";
+import { ENTITY_TYPE, Message } from "entities/AppsmithConsole";
 import { DataTree } from "entities/DataTree/dataTreeFactory";
 import {
-  DataTreeDiff,
-  DataTreeDiffEvent,
   getEntityNameAndPropertyPath,
   isAction,
   isWidget,
@@ -13,13 +11,16 @@ import {
   EvaluationError,
   getEvalErrorPath,
   getEvalValuePath,
+  PropertyEvalErrorTypeDebugMessage,
   PropertyEvaluationErrorType,
 } from "utils/DynamicBindingUtils";
-import { find, get, some } from "lodash";
+import _ from "lodash";
 import LOG_TYPE from "../entities/AppsmithConsole/logtype";
+import moment from "moment/moment";
 import { put, select } from "redux-saga/effects";
 import {
   ReduxAction,
+  ReduxActionTypes,
   ReduxActionWithoutPayload,
 } from "constants/ReduxActionConstants";
 import { Toaster } from "components/ads/Toast";
@@ -31,23 +32,24 @@ import {
   createMessage,
   ERROR_EVAL_ERROR_GENERIC,
   ERROR_EVAL_TRIGGER,
-  VALUE_IS_INVALID,
 } from "constants/messages";
 import log from "loglevel";
 import { AppState } from "reducers";
 import { getAppMode } from "selectors/applicationSelectors";
-import { APP_MODE } from "entities/App";
+import { APP_MODE } from "reducers/entityReducers/appReducer";
 import { dataTreeTypeDefCreator } from "utils/autocomplete/dataTreeTypeDefCreator";
 import TernServer from "utils/autocomplete/TernServer";
+import { logDebuggerErrorAnalytics } from "actions/debuggerActions";
+import store from "../store";
 
 const getDebuggerErrors = (state: AppState) => state.ui.debugger.errors;
 
-function logLatestEvalPropertyErrors(
-  currentDebuggerErrors: Record<string, Log>,
+function getLatestEvalPropertyErrors(
+  currentDebuggerErrors: Record<string, Message>,
   dataTree: DataTree,
   evaluationOrder: Array<string>,
 ) {
-  const updatedDebuggerErrors: Record<string, Log> = {
+  const updatedDebuggerErrors: Record<string, Message> = {
     ...currentDebuggerErrors,
   };
 
@@ -60,12 +62,12 @@ function logLatestEvalPropertyErrors(
       if (propertyPath in entity.logBlackList) {
         continue;
       }
-      const allEvalErrors: EvaluationError[] = get(
+      const allEvalErrors: EvaluationError[] = _.get(
         entity,
         getEvalErrorPath(evaluatedPath, false),
         [],
       );
-      const evaluatedValue = get(
+      const evaluatedValue = _.get(
         entity,
         getEvalValuePath(evaluatedPath, false),
       );
@@ -85,17 +87,23 @@ function logLatestEvalPropertyErrors(
 
       if (evalErrors.length) {
         // TODO Rank and set the most critical error
-        // const error = evalErrors[0];
-        // Reformatting eval errors here to a format usable by the debugger
-        const errorMessages = evalErrors.map((e) => {
-          // Error format required for the debugger
-          const formattedError = {
-            message: e.errorMessage,
-            type: e.errorType,
-          };
+        const error = evalErrors[0];
+        const errorMessages = evalErrors.map((e) => ({
+          message: e.errorMessage,
+        }));
 
-          return formattedError;
-        });
+        if (!(debuggerKey in updatedDebuggerErrors)) {
+          store.dispatch(
+            logDebuggerErrorAnalytics({
+              eventName: "DEBUGGER_NEW_ERROR",
+              entityId: idField,
+              entityName: nameField,
+              entityType,
+              propertyPath,
+              errorMessages,
+            }),
+          );
+        }
 
         const analyticsData = isWidget(entity)
           ? {
@@ -104,13 +112,14 @@ function logLatestEvalPropertyErrors(
           : {};
 
         // Add or update
-        AppsmithConsole.addError({
-          id: debuggerKey,
+        updatedDebuggerErrors[debuggerKey] = {
           logType: LOG_TYPE.EVAL_ERROR,
-          // Unless the intention is to change the message shown in the debugger please do not
-          // change the text shown here
-          text: createMessage(VALUE_IS_INVALID, propertyPath),
+          text: PropertyEvalErrorTypeDebugMessage[error.errorType](
+            propertyPath,
+          ),
           messages: errorMessages,
+          severity: error.severity,
+          timestamp: moment().format("hh:mm:ss"),
           source: {
             id: idField,
             name: nameField,
@@ -121,12 +130,25 @@ function logLatestEvalPropertyErrors(
             [propertyPath]: evaluatedValue,
           },
           analytics: analyticsData,
-        });
+        };
       } else if (debuggerKey in updatedDebuggerErrors) {
-        AppsmithConsole.deleteError(debuggerKey);
+        store.dispatch(
+          logDebuggerErrorAnalytics({
+            eventName: "DEBUGGER_RESOLVED_ERROR",
+            entityId: idField,
+            entityName: nameField,
+            entityType,
+            propertyPath:
+              updatedDebuggerErrors[debuggerKey].source?.propertyPath ?? "",
+            errorMessages: updatedDebuggerErrors[debuggerKey].messages ?? [],
+          }),
+        );
+        // Remove
+        delete updatedDebuggerErrors[debuggerKey];
       }
     }
   }
+  return updatedDebuggerErrors;
 }
 
 export function* evalErrorHandler(
@@ -135,15 +157,19 @@ export function* evalErrorHandler(
   evaluationOrder?: Array<string>,
 ): any {
   if (dataTree && evaluationOrder) {
-    const currentDebuggerErrors: Record<string, Log> = yield select(
+    const currentDebuggerErrors: Record<string, Message> = yield select(
       getDebuggerErrors,
     );
-    // Update latest errors to the debugger
-    logLatestEvalPropertyErrors(
+    const evalPropertyErrors = getLatestEvalPropertyErrors(
       currentDebuggerErrors,
       dataTree,
       evaluationOrder,
     );
+
+    yield put({
+      type: ReduxActionTypes.DEBUGGER_UPDATE_ERROR_LOGS,
+      payload: evalPropertyErrors,
+    });
   }
 
   errors.forEach((error) => {
@@ -232,13 +258,13 @@ export function* logSuccessfulBindings(
     );
     const entity = dataTree[entityName];
     if (isAction(entity) || isWidget(entity)) {
-      const unevalValue = get(unEvalTree, evaluatedPath);
+      const unevalValue = _.get(unEvalTree, evaluatedPath);
       const entityType = isAction(entity) ? entity.pluginType : entity.type;
-      const isABinding = find(entity.dynamicBindingPathList, {
+      const isABinding = _.find(entity.dynamicBindingPathList, {
         key: propertyPath,
       });
       const logBlackList = entity.logBlackList;
-      const errors: EvaluationError[] = get(
+      const errors: EvaluationError[] = _.get(
         dataTree,
         getEvalErrorPath(evaluatedPath),
         [],
@@ -267,34 +293,38 @@ export function* postEvalActionDispatcher(
   }
 }
 
-// We update the data tree definition after every eval so that autocomplete
-// is accurate
+// Update only the changed entities on tern. We will pick up the updated
+// entities from the evaluation order and create a new def from them.
+// When there is a top level entity removed in removedPaths,
+// we will remove its def
 export function* updateTernDefinitions(
   dataTree: DataTree,
-  updates?: DataTreeDiff[],
+  evaluationOrder: string[],
+  isFirstEvaluation: boolean,
 ) {
-  let shouldUpdate: boolean;
-  // No updates means it was a first Eval
-  if (!updates) {
-    shouldUpdate = true;
-  } else if (updates.length === 0) {
-    // update length is 0 means no significant updates
-    shouldUpdate = false;
+  const updatedEntities: Set<string> = new Set();
+  // If it is the first evaluation, we want to add everything in the data tree
+  if (isFirstEvaluation) {
+    TernServer.resetServer();
+    Object.keys(dataTree).forEach((key) => updatedEntities.add(key));
   } else {
-    // Only when new field is added or deleted, we want to re create the def
-    shouldUpdate = some(updates, (update) => {
-      return (
-        update.event === DataTreeDiffEvent.NEW ||
-        update.event === DataTreeDiffEvent.DELETE
-      );
+    evaluationOrder.forEach((path) => {
+      const { entityName } = getEntityNameAndPropertyPath(path);
+      updatedEntities.add(entityName);
     });
   }
-  if (shouldUpdate) {
-    const start = performance.now();
-    const { def, entityInfo } = dataTreeTypeDefCreator(dataTree);
-    TernServer.updateDef("DATA_TREE", def, entityInfo);
-    const end = performance.now();
-    log.debug("Tern", { updates });
-    log.debug("Tern definitions updated took ", (end - start).toFixed(2));
-  }
+
+  updatedEntities.forEach((entityName) => {
+    const entity = dataTree[entityName];
+    if (entity) {
+      const { def, name } = dataTreeTypeDefCreator(entity, entityName);
+      TernServer.updateDef(name, def);
+    }
+  });
+  // removedPaths.forEach((path) => {
+  //   // No '.' means that the path is an entity name
+  //   if (path.split(".").length === 1) {
+  //     TernServer.removeDef(path);
+  //   }
+  // });
 }

@@ -29,14 +29,15 @@ export default {
 
     let updatedItems = [];
 
-    for (let itemIndex = 0; itemIndex < props.listData.length; itemIndex++) {
-      let currentItem = JSON.parse(JSON.stringify(item));
+    for (let i = 0; i < props.listData.length; i++) {
+      updatedItems[i] = JSON.parse(JSON.stringify(item));
+    }
+
+    updatedItems.map((currentItem, itemIndex) => {
       const widgetKeys = Object.keys(currentItem);
 
-      for (var i = 0; i < widgetKeys.length; i++) {
-        const currentWidgetName = widgetKeys[i];
-        let currentWidget = currentItem[currentWidgetName];
-        const filteredWidget = {};
+      widgetKeys.map((currentWidgetName) => {
+        const currentWidget = currentItem[currentWidgetName];
 
         const dynamicPaths = _.compact(
           currentWidget.dynamicBindingPathList?.map((path) => path.key),
@@ -99,15 +100,8 @@ export default {
             _.set(currentWidget, key, metaPropertyValue);
           }
         });
-
-        currentItem[currentWidgetName] = _.pick(
-          currentWidget,
-          props.childrenEntityDefinitions[currentWidget.type],
-        );
-      }
-
-      updatedItems[itemIndex] = currentItem;
-    }
+      });
+    });
 
     return updatedItems;
   },

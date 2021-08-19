@@ -18,7 +18,6 @@ import {
 import { getSelectedWidget } from "selectors/ui";
 import AnalyticsUtil from "utils/AnalyticsUtil";
 import history from "utils/history";
-import { getQueryParams } from "../../../utils/AppsmithUtils";
 
 function ActionLink(props: EntityLinkProps) {
   const applicationId = useSelector(getCurrentApplicationId);
@@ -94,14 +93,7 @@ function DatasourceLink(props: EntityLinkProps) {
 
   const onClick = () => {
     if (datasource) {
-      history.push(
-        DATA_SOURCES_EDITOR_ID_URL(
-          appId,
-          pageId,
-          datasource.id,
-          getQueryParams(),
-        ),
-      );
+      history.push(DATA_SOURCES_EDITOR_ID_URL(appId, pageId, datasource.id));
       AnalyticsUtil.logEvent("DEBUGGER_ENTITY_NAVIGATION", {
         entityType: "DATASOURCE",
       });

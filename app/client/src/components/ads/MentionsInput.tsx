@@ -235,7 +235,6 @@ function MentionsInput({
         placeholder={placeholder}
         plugins={plugins}
         ref={setRef}
-        webDriverTestID="mentions-input"
       />
       <MentionSuggestions
         entryComponent={SuggestionComponent}

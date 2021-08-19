@@ -215,7 +215,7 @@ function RenderOptions(props: {
     trigger: {
       content: (
         <DropdownTrigger className={props.className}>
-          <AutoToolTipComponentWrapper isCellVisible title={selectedValue}>
+          <AutoToolTipComponentWrapper title={selectedValue}>
             {selectedValue}
           </AutoToolTipComponentWrapper>
           <Icon color={Colors.SLATE_GRAY} icon="caret-down" iconSize={16} />
@@ -504,6 +504,7 @@ function Fields(props: CascadeFieldProps & { state: CascadeFieldState }) {
       payload: props,
     });
   }, [props]);
+
   return (
     <FieldWrapper className="t--table-filter">
       <StyledRemoveIcon
@@ -561,17 +562,15 @@ function Fields(props: CascadeFieldProps & { state: CascadeFieldState }) {
       {showDateInput ? (
         <DatePickerWrapper className="t--table-filter-date-input">
           <DatePickerComponent
-            closeOnSelection
             dateFormat="YYYY-MM-DD HH:mm"
             datePickerType="DATE_PICKER"
+            enableTimePicker={false}
             isDisabled={false}
             isLoading={false}
             label=""
             onDateSelected={onDateSelected}
             selectedDate={value}
-            shortcuts={false}
             widgetId=""
-            withoutPortal
           />
         </DatePickerWrapper>
       ) : null}

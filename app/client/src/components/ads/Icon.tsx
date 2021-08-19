@@ -74,9 +74,6 @@ import { ReactComponent as CapSolidIcon } from "assets/icons/control/cap_solid.s
 import { ReactComponent as CapDotIcon } from "assets/icons/control/cap_dot.svg";
 import { ReactComponent as LineDottedIcon } from "assets/icons/control/line_dotted.svg";
 import { ReactComponent as LineDashedIcon } from "assets/icons/control/line_dashed.svg";
-import { ReactComponent as TableIcon } from "assets/icons/ads/tables.svg";
-import { ReactComponent as ColumnIcon } from "assets/icons/ads/column.svg";
-
 import styled from "styled-components";
 import { CommonComponentProps, Classes } from "./common";
 import { noop } from "lodash";
@@ -212,8 +209,6 @@ export const IconCollection = [
   "cap-dot",
   "line-dotted",
   "line-dashed",
-  "tables",
-  "column",
 ] as const;
 
 export type IconName = typeof IconCollection[number];
@@ -241,7 +236,19 @@ export const IconWrapper = styled.span<IconProps>`
   ${(props) => (props.invisible ? `visibility: hidden;` : null)};
 
   &:hover {
-    cursor: ${(props) => (props.clickable ? "pointer" : "default")};
+    cursor: pointer;
+    ${(props) =>
+      !props.keepColors
+        ? `
+    path {
+      fill: ${props.hoverFillColor || props.theme.colors.icon.hover};
+    }
+    `
+        : ""}
+  }
+
+  &:hover {
+    cursor: pointer;
     ${(props) =>
       !props.keepColors
         ? `
@@ -262,8 +269,6 @@ export type IconProps = {
   fillColor?: string;
   hoverFillColor?: string;
   keepColors?: boolean;
-  loaderWithIconWrapper?: boolean;
-  clickable?: boolean;
 };
 
 const Icon = forwardRef(
@@ -529,34 +534,13 @@ const Icon = forwardRef(
         returnIcon = <LineDashedIcon />;
         break;
 
-      case "tables":
-        returnIcon = <TableIcon />;
-        break;
-
-      case "column":
-        returnIcon = <ColumnIcon />;
-        break;
-
       default:
         returnIcon = null;
         break;
     }
-
-    const clickable = props.clickable === undefined ? true : props.clickable;
-
-    let loader = <Spinner size={props.size} />;
-    if (props.loaderWithIconWrapper) {
-      loader = (
-        <IconWrapper className={Classes.ICON} clickable={clickable} {...props}>
-          <Spinner size={props.size} />
-        </IconWrapper>
-      );
-    }
-
     return returnIcon && !props.isLoading ? (
       <IconWrapper
         className={Classes.ICON}
-        clickable={clickable}
         data-cy={props.cypressSelector}
         ref={ref}
         {...props}
@@ -565,7 +549,7 @@ const Icon = forwardRef(
         {returnIcon}
       </IconWrapper>
     ) : props.isLoading ? (
-      loader
+      <Spinner size={props.size} />
     ) : null;
   },
 );

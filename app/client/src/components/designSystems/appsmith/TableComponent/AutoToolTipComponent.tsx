@@ -21,7 +21,6 @@ export const OpenNewTabIconWrapper = styled.div`
 
 interface Props {
   isHidden?: boolean;
-  isCellVisible?: boolean;
   children: React.ReactNode;
   title: string;
   cellProperties?: CellLayoutProperties;
@@ -43,7 +42,6 @@ function LinkWrapper(props: Props) {
   return (
     <CellWrapper
       cellProperties={props.cellProperties}
-      isCellVisible={props.isCellVisible}
       isHidden={props.isHidden}
       isHyperLink
       onClick={() => {
@@ -93,7 +91,6 @@ function AutoToolTipComponent(props: Props) {
   return (
     <CellWrapper
       cellProperties={props.cellProperties}
-      isCellVisible={props.isCellVisible}
       isHidden={props.isHidden}
       ref={ref}
     >

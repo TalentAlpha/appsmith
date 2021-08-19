@@ -1,12 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 
 import Text, { TextType } from "components/ads/Text";
 import ShowcaseCarousel, { Steps } from "components/ads/ShowcaseCarousel";
 import ProfileForm, { PROFILE_FORM } from "./ProfileForm";
 import CommentsCarouselModal from "./CommentsCarouselModal";
-import ProgressiveImage, {
-  Container as ProgressiveImageContainer,
-} from "components/ads/ProgressiveImage";
 
 import styled, { withTheme } from "styled-components";
 import { Theme } from "constants/DefaultTheme";
@@ -28,21 +25,10 @@ import { S3_BUCKET_URL } from "constants/ThirdPartyConstants";
 
 import { getCurrentAppOrg } from "selectors/organizationSelectors";
 import useOrg from "utils/hooks/useOrg";
-import { getCanCreateApplications } from "utils/helpers";
-
-import stepOneThumbnail from "assets/images/comments-onboarding/thumbnails/step-1.jpg";
-import stepTwoThumbnail from "assets/images/comments-onboarding/thumbnails/step-2.jpg";
-
-import { setCommentModeInUrl } from "pages/Editor/ToggleModeButton";
+import { getCanManage } from "utils/helpers";
 
 const getBanner = (step: number) =>
   `${S3_BUCKET_URL}/comments/step-${step}.png`;
-
-enum IntroStepsTypesEditor {
-  INTRODUCING_LIVE_COMMENTS,
-  GIVE_CONTEXTUAL_FEEDBACK,
-  PROFILE_FORM,
-}
 
 const introStepsEditor = [
   {
@@ -50,24 +36,17 @@ const introStepsEditor = [
     content:
       "You can now collaborate with your users to build apps faster. Invite your team to comment on your apps, exchange thoughts & ship your ideas.",
     banner: getBanner(1),
-    bannerThumbnail: stepOneThumbnail,
     hideBackBtn: true,
-    showSkipBtn: true,
+    bannerProps: { style: { height: 284 } },
   },
   {
     title: "Give Contextual Feedback",
     content:
       "Drop a comment on a widget to suggest an improvement. Comments are tagged to the widget and move along with it. Update the widget and iterate your way to shipping your ideas!",
     banner: getBanner(2),
-    bannerThumbnail: stepTwoThumbnail,
+    bannerProps: { style: { height: 284 } },
   },
 ];
-
-enum IntroStepsTypesViewer {
-  INTRODUCING_LIVE_COMMENTS,
-  GIVE_CONTEXTUAL_FEEDBACK,
-  PROFILE_FORM,
-}
 
 const introStepsViewer = [
   {
@@ -75,16 +54,15 @@ const introStepsViewer = [
     content:
       "You can now collaborate with your developers to build apps faster. Exchange thoughts, leave feedback & ship your ideas.",
     banner: getBanner(1),
-    bannerThumbnail: stepOneThumbnail,
     hideBackBtn: true,
-    showSkipBtn: true,
+    bannerProps: { style: { height: 284 } },
   },
   {
     title: "Give Contextual Feedback",
     content:
       "Drop a comment on a widget to suggest an improvement or report an issue. Comments are tagged to the widget, resolve them once the updates are live!",
     banner: getBanner(2),
-    bannerThumbnail: stepTwoThumbnail,
+    bannerProps: { style: { height: 284 } },
   },
 ];
 
@@ -92,33 +70,21 @@ const IntroContentContainer = styled.div`
   padding: ${(props) => props.theme.spaces[5]}px;
 `;
 
-const BannerContainer = styled.div`
-  & ${ProgressiveImageContainer} {
-    width: 100%;
-    height: 284px;
-  }
-  .progressive-image--thumb,
-  progressive-image--full {
-    object-fit: contain;
-  }
+const StyledImg = styled.img`
+  width: 100%;
+  object-fit: contain;
 `;
 
 function IntroStep(props: {
   title: string;
   content: string;
   banner: string;
-  bannerThumbnail: any;
   theme: Theme;
   bannerProps: any;
 }) {
   return (
     <>
-      <BannerContainer>
-        <ProgressiveImage
-          imageSource={props.banner}
-          thumbnailSource={props.bannerThumbnail}
-        />
-      </BannerContainer>
+      <StyledImg alt="" src={props.banner} {...props.bannerProps} />
       <IntroContentContainer>
         <div style={{ marginBottom: props.theme.spaces[4] }}>
           <Text
@@ -144,22 +110,18 @@ function IntroStep(props: {
 const IntroStepThemed = withTheme(IntroStep);
 
 const getSteps = (
+  onSubmitProfileForm: any,
   isSubmitProfileFormDisabled: boolean,
-  finalSubmit: () => void,
+  startTutorial: () => void,
   initialProfileFormValues: { emailAddress?: string; displayName?: string },
   emailDisabled: boolean,
   showEditorSteps: boolean,
-  onSkip: () => void,
-  isSkipped?: boolean,
 ) => {
   const introSteps = showEditorSteps ? introStepsEditor : introStepsViewer;
 
   return [
     ...introSteps.map((stepConfig: any) => ({
-      props: {
-        ...stepConfig,
-        onSkip,
-      },
+      props: stepConfig,
       component: IntroStepThemed,
     })),
     {
@@ -168,26 +130,15 @@ const getSteps = (
         isSubmitDisabled: isSubmitProfileFormDisabled,
         initialValues: initialProfileFormValues,
         emailDisabled,
-        nextBtnText: isSkipped ? "Submit" : "Start Tutorial",
-        onSubmit: finalSubmit,
+        nextBtnText: "Start Tutorial",
+        onSubmit: () => {
+          startTutorial();
+          onSubmitProfileForm();
+        },
         hideBackBtn: true,
       },
     },
   ];
-};
-
-const getInitialAndFinalSteps = (canManage: boolean) => {
-  if (canManage) {
-    return [
-      IntroStepsTypesEditor.INTRODUCING_LIVE_COMMENTS,
-      IntroStepsTypesEditor.PROFILE_FORM,
-    ];
-  } else {
-    return [
-      IntroStepsTypesViewer.INTRODUCING_LIVE_COMMENTS,
-      IntroStepsTypesViewer.PROFILE_FORM,
-    ];
-  }
 };
 
 export default function CommentsShowcaseCarousel() {
@@ -196,8 +147,6 @@ export default function CommentsShowcaseCarousel() {
   const profileFormValues = useSelector(getFormValues(PROFILE_FORM));
   const profileFormErrors = useSelector(getFormSyncErrors("PROFILE_FORM"));
   const isSubmitDisabled = Object.keys(profileFormErrors).length !== 0;
-
-  const [isSkipped, setIsSkipped] = useState(false);
 
   const currentUser = useSelector(getCurrentUser);
   const { email, name } = currentUser || {};
@@ -214,57 +163,32 @@ export default function CommentsShowcaseCarousel() {
 
   const { id } = useSelector(getCurrentAppOrg) || {};
   const currentOrg = useOrg(id);
-  const canManage = getCanCreateApplications(currentOrg);
+  const canManage = getCanManage(currentOrg);
 
-  const [initialStep, finalStep] = getInitialAndFinalSteps(canManage);
+  const startTutorial = () => {
+    const tourType = canManage
+      ? TourType.COMMENTS_TOUR_EDIT_MODE
+      : TourType.COMMENTS_TOUR_PUBLISHED_MODE;
 
-  const [activeIndex, setActiveIndex] = useState(initialStep);
-
-  const finalSubmit = async () => {
+    dispatch(setActiveTour(tourType));
     dispatch(hideCommentsIntroCarousel());
-    await setCommentsIntroSeen(true);
-
-    if (!isSkipped) {
-      const tourType = canManage
-        ? TourType.COMMENTS_TOUR_EDIT_MODE
-        : TourType.COMMENTS_TOUR_PUBLISHED_MODE;
-      dispatch(setActiveTour(tourType));
-    } else {
-      setCommentModeInUrl(true);
-    }
-
-    onSubmitProfileForm();
-  };
-
-  const onSkip = () => {
-    setActiveIndex(finalStep);
-    setIsSkipped(true);
+    setCommentsIntroSeen(true);
   };
 
   const steps = getSteps(
+    onSubmitProfileForm,
     isSubmitDisabled,
-    finalSubmit,
+    startTutorial,
     initialProfileFormValues,
     !!email,
     canManage,
-    onSkip,
-    isSkipped,
   );
-
-  const handleClose = () => {
-    dispatch(hideCommentsIntroCarousel());
-  };
 
   if (steps.length === 0 || !isIntroCarouselVisible) return null;
 
   return (
     <CommentsCarouselModal>
-      <ShowcaseCarousel
-        activeIndex={activeIndex}
-        onClose={handleClose}
-        setActiveIndex={setActiveIndex}
-        steps={steps as Steps}
-      />
+      <ShowcaseCarousel steps={steps as Steps} />
     </CommentsCarouselModal>
   );
 }

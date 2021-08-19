@@ -19,7 +19,7 @@ export const commentsTourStepsEditMode = [
   {
     id: commentsTourStepsEditModeTypes.SAY_HELLO,
     data: {
-      message: "type Hello",
+      message: "Say hello to team appsmith",
       tooltipProps: { position: Position.TOP },
     },
   },

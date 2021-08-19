@@ -74,8 +74,7 @@ export const updateBodyContentType = (
 export const redirectToNewIntegrations = (
   applicationId: string,
   pageId: string,
-  params?: any,
-): ReduxAction<{ applicationId: string; pageId: string; params: any }> => ({
+): ReduxAction<{ applicationId: string; pageId: string }> => ({
   type: ReduxActionTypes.REDIRECT_TO_NEW_INTEGRATIONS,
-  payload: { applicationId, pageId, params },
+  payload: { applicationId, pageId },
 });

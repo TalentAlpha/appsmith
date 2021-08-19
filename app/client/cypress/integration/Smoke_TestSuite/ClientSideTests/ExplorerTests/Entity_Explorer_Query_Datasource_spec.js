@@ -62,7 +62,9 @@ describe("Entity explorer tests related to query and datasource", function() {
     cy.wait(2000);
     cy.NavigateToQueryEditor();
 
-    cy.contains(".t--datasource-name", datasourceName).click();
+    cy.contains(".t--datasource-name", datasourceName)
+      .find(queryLocators.editDatasourceButton)
+      .click();
 
     cy.get(".t--edit-datasource-name").click();
     cy.get(".t--edit-datasource-name input")
@@ -126,7 +128,9 @@ describe("Entity explorer tests related to query and datasource", function() {
     cy.get(pages.integrationActiveTab)
       .should("be.visible")
       .click({ force: true });
-    cy.contains(".t--datasource-name", datasourceName).click();
+    cy.contains(".t--datasource-name", datasourceName)
+      .find(".t--edit-datasource")
+      .click();
     cy.get(".t--delete-datasource").click();
     cy.wait("@deleteDatasource").should(
       "have.nested.property",

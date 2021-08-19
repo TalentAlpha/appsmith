@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo } from "react";
 import { useSelector } from "react-redux";
 import EntityPlaceholder from "../Entity/Placeholder";
 import Entity from "../Entity";
@@ -51,9 +51,8 @@ export const ExplorerWidgetGroup = memo((props: ExplorerWidgetGroupProps) => {
     </EntityPlaceholder>
   );
 
-  const widgetsInStep = useMemo(() => {
-    return props.widgets?.children?.map((child) => child.widgetId) || [];
-  }, [props.widgets?.children]);
+  const widgetsInStep =
+    props.widgets?.children?.map((child) => child.widgetId) || [];
 
   return (
     <Entity

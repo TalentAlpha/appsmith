@@ -4,7 +4,7 @@ import swap from "lodash-move";
 import { useDrag } from "react-use-gesture";
 import { useSprings, animated, interpolate } from "react-spring";
 import styled from "styled-components";
-import { debounce, get } from "lodash";
+import { debounce } from "lodash";
 
 interface SpringStyleProps {
   down: boolean;
@@ -59,24 +59,19 @@ const DraggableListWrapper = styled.div`
   }
 `;
 
-function DraggableList(props: any) {
-  const { itemHeight, ItemRenderer, items, onUpdate } = props;
-  const shouldReRender = get(props, "shouldReRender", true);
+function DraggableList({ itemHeight, ItemRenderer, items, onUpdate }: any) {
   // order of items in the list
   const order = useRef<any>(items.map((_: any, index: any) => index));
 
-  const onDrop = (originalIndex: number, newIndex: number) => {
-    onUpdate(order.current, originalIndex, newIndex);
-
-    if (shouldReRender) {
-      order.current = items.map((_: any, index: any) => index);
-      setSprings(updateSpringStyles(order.current, itemHeight));
-    }
+  const onDrop = () => {
+    onUpdate(order.current);
+    order.current = items.map((_: any, index: any) => index);
+    setSprings(updateSpringStyles(order.current, itemHeight));
   };
 
   useEffect(() => {
     // when items are updated(added/removed/updated) reassign order and animate springs.
-    if (items.length !== order.current.length || shouldReRender === false) {
+    if (items.length !== order.current.length) {
       order.current = items.map((_: any, index: any) => index);
       setSprings(updateSpringStyles(order.current, itemHeight));
     }
@@ -110,7 +105,7 @@ function DraggableList(props: any) {
       if (!props.down) {
         order.current = newOrder;
         setSprings(updateSpringStyles(order.current, itemHeight));
-        debounce(onDrop, 400)(curIndex, curRow);
+        debounce(onDrop, 400)();
       }
     }
   });

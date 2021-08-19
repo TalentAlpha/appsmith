@@ -13,13 +13,6 @@ import {
 } from "components/editorComponents/CodeEditor/EditorConfig";
 import Text, { Case, TextType } from "components/ads/Text";
 import { Classes } from "components/ads/common";
-import { AutocompleteDataType } from "utils/autocomplete/TernServer";
-import DynamicDropdownField from "./DynamicDropdownField";
-import { Colors } from "constants/Colors";
-import {
-  DEFAULT_MULTI_PART_DROPDOWN_WIDTH,
-  MULTI_PART_DROPDOWN_OPTIONS,
-} from "constants/ApiEditorConstants";
 
 type CustomStack = {
   removeTopPadding?: boolean;
@@ -89,29 +82,6 @@ const FlexContainer = styled.div`
   }
 `;
 
-const DynamicTextFieldWithDropdownWrapper = styled.div`
-  display: flex;
-  position: relative;
-  border-bottom: solid 1px ${Colors.MERCURY};
-  margin-bottom: 10px;
-  top: -2px;
-  & .CodeEditorTarget * {
-    border-bottom: none !important;
-  }
-`;
-
-const DynamicDropdownFieldWrapper = styled.div`
-  position: relative;
-  top: 1px;
-  margin-left: 5px;
-`;
-
-const expected = {
-  type: FIELD_VALUES.API_ACTION.params,
-  example: "",
-  autocompleteDataType: AutocompleteDataType.STRING,
-};
-
 function KeyValueRow(props: Props & WrappedFieldArrayProps) {
   useEffect(() => {
     // Always maintain 2 rows
@@ -159,41 +129,16 @@ function KeyValueRow(props: Props & WrappedFieldArrayProps) {
             return (
               <FormRowWithLabel key={index}>
                 <Flex size={1}>
-                  {props.hasType ? (
-                    <DynamicTextFieldWithDropdownWrapper>
-                      <DynamicTextField
-                        border={CodeEditorBorder.BOTTOM_SIDE}
-                        className={`t--${field}.key.${index}`}
-                        dataTreePath={`${props.dataTreePath}[${index}].key`}
-                        expected={expected}
-                        hoverInteraction
-                        name={`${field}.key`}
-                        placeholder={`Key ${index + 1}`}
-                        theme={props.theme}
-                      />
-
-                      <DynamicDropdownFieldWrapper>
-                        <DynamicDropdownField
-                          accent="grey"
-                          filled
-                          name={`${field}.type`}
-                          options={MULTI_PART_DROPDOWN_OPTIONS}
-                          width={DEFAULT_MULTI_PART_DROPDOWN_WIDTH}
-                        />
-                      </DynamicDropdownFieldWrapper>
-                    </DynamicTextFieldWithDropdownWrapper>
-                  ) : (
-                    <DynamicTextField
-                      border={CodeEditorBorder.BOTTOM_SIDE}
-                      className={`t--${field}.key.${index}`}
-                      dataTreePath={`${props.dataTreePath}[${index}].key`}
-                      expected={expected}
-                      hoverInteraction
-                      name={`${field}.key`}
-                      placeholder={`Key ${index + 1}`}
-                      theme={props.theme}
-                    />
-                  )}
+                  <DynamicTextField
+                    border={CodeEditorBorder.BOTTOM_SIDE}
+                    className={`t--${field}.key.${index}`}
+                    dataTreePath={`${props.dataTreePath}[${index}].key`}
+                    expected={FIELD_VALUES.API_ACTION.params}
+                    hoverInteraction
+                    name={`${field}.key`}
+                    placeholder={`Key ${index + 1}`}
+                    theme={props.theme}
+                  />
                 </Flex>
 
                 {!props.actionConfig && (
@@ -202,7 +147,7 @@ function KeyValueRow(props: Props & WrappedFieldArrayProps) {
                       border={CodeEditorBorder.BOTTOM_SIDE}
                       className={`t--${field}.value.${index}`}
                       dataTreePath={`${props.dataTreePath}[${index}].value`}
-                      expected={expected}
+                      expected={FIELD_VALUES.API_ACTION.params}
                       hoverInteraction
                       name={`${field}.value`}
                       placeholder={`Value ${index + 1}`}
@@ -222,7 +167,7 @@ function KeyValueRow(props: Props & WrappedFieldArrayProps) {
                           props.actionConfig[index].editable === undefined
                         )
                       }
-                      expected={expected}
+                      expected={FIELD_VALUES.API_ACTION.params}
                       name={`${field}.value`}
                       placeholder={
                         props.placeholder
@@ -287,7 +232,6 @@ type Props = {
   dataTreePath?: string;
   hideHeader?: boolean;
   theme?: EditorTheme;
-  hasType?: boolean;
 };
 
 function KeyValueFieldArray(props: Props) {

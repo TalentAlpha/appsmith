@@ -4,8 +4,6 @@ import Icon, { IconSize } from "components/ads/Icon";
 import { Colors } from "constants/Colors";
 import styled from "styled-components";
 import { Tooltip, Classes } from "@blueprintjs/core";
-import { useSelector } from "react-redux";
-import { snipingModeSelector } from "selectors/editorSelectors";
 // I honestly can't think of a better name for this enum
 export enum Activities {
   HOVERING,
@@ -39,7 +37,6 @@ const SettingsWrapper = styled.div`
 const WidgetName = styled.span`
   margin-right: ${(props) => props.theme.spaces[1] + 1}px;
   margin-left: ${(props) => props.theme.spaces[3]}px;
-  white-space: nowrap;
 `;
 
 const StyledErrorIcon = styled(Icon)`
@@ -60,20 +57,13 @@ type SettingsControlProps = {
   errorCount: number;
 };
 
-const BindDataIcon = ControlIcons.BIND_DATA_CONTROL;
 const SettingsIcon = ControlIcons.SETTINGS_CONTROL;
 
 const getStyles = (
   activity: Activities,
   errorCount: number,
-  isSnipingMode: boolean,
 ): CSSProperties | undefined => {
-  if (isSnipingMode) {
-    return {
-      background: Colors.DANUBE,
-      color: Colors.WHITE,
-    };
-  } else if (errorCount > 0) {
+  if (errorCount > 0) {
     return {
       background: "red",
       color: Colors.WHITE,
@@ -100,7 +90,6 @@ const getStyles = (
 };
 
 export function SettingsControl(props: SettingsControlProps) {
-  const isSnipingMode = useSelector(snipingModeSelector);
   const settingsIcon = (
     <SettingsIcon
       color={
@@ -124,11 +113,7 @@ export function SettingsControl(props: SettingsControlProps) {
 
   return (
     <StyledTooltip
-      content={
-        isSnipingMode
-          ? `Bind to widget ${props.name}`
-          : "Edit widget properties"
-      }
+      content="Edit widget properties"
       hoverOpenDelay={500}
       position="top-right"
     >
@@ -136,21 +121,16 @@ export function SettingsControl(props: SettingsControlProps) {
         className="t--widget-propertypane-toggle"
         data-testid="t--widget-propertypane-toggle"
         onClick={props.toggleSettings}
-        style={getStyles(props.activity, props.errorCount, isSnipingMode)}
+        style={getStyles(props.activity, props.errorCount)}
       >
-        {!!props.errorCount && !isSnipingMode && (
+        {!!props.errorCount && (
           <>
             {errorIcon}
             <span className="t--widget-error-count">{props.errorCount}</span>
           </>
         )}
-        {isSnipingMode && (
-          <BindDataIcon color={Colors.WHITE} height={16} width={12} />
-        )}
-        <WidgetName className="t--widget-name">
-          {isSnipingMode ? `Bind to ${props.name}` : props.name}
-        </WidgetName>
-        {!isSnipingMode && settingsIcon}
+        <WidgetName className="t--widget-name">{props.name}</WidgetName>
+        {settingsIcon}
       </SettingsWrapper>
     </StyledTooltip>
   );

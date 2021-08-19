@@ -51,7 +51,7 @@ const ButtonLogo = styled.img`
   height: 14px;
 `;
 
-export const SocialLoginTypes = {
+export const SocialLoginTypes: Record<string, string> = {
   GOOGLE: "google",
   GITHUB: "github",
 };

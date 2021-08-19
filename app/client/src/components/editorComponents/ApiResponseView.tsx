@@ -212,13 +212,6 @@ function ApiResponseView(props: Props) {
     setSelectedIndex(1);
   }, []);
 
-  const onRunClick = () => {
-    props.onRunClick();
-    AnalyticsUtil.logEvent("RESPONSE_TAB_RUN_ACTION_CLICK", {
-      source: "API_PANE",
-    });
-  };
-
   const initialIndex = useSelector(getActionTabsInitialIndex);
   const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const messages = response?.messages;
@@ -257,7 +250,7 @@ function ApiResponseView(props: Props) {
                 {EMPTY_RESPONSE_FIRST_HALF()}
                 <InlineButton
                   isLoading={isRunning}
-                  onClick={onRunClick}
+                  onClick={props.onRunClick}
                   size={Size.medium}
                   tag="button"
                   text="Run"

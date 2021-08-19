@@ -121,7 +121,9 @@ describe("Canvas selection test cases", () => {
         },
       ),
     );
-    const selectedWidgets = component.queryAllByTestId("t--selected");
+    const selectedWidgets = component.queryAllByTestId(
+      "t--widget-propertypane-toggle",
+    );
     expect(selectedWidgets.length).toBe(2);
   });
 });

@@ -54,7 +54,6 @@ if (enableGithubOAuth) SocialLoginList.push(SocialLoginTypes.GITHUB);
 
 import { withTheme } from "styled-components";
 import { Theme } from "constants/DefaultTheme";
-import { getIsSafeRedirectURL } from "utils/helpers";
 
 declare global {
   interface Window {
@@ -109,7 +108,7 @@ export function SignUp(props: SignUpFormProps) {
     signupURL += `?appId=${queryParams.get("appId")}`;
   } else {
     const redirectUrl = queryParams.get("redirectUrl");
-    if (redirectUrl != null && getIsSafeRedirectURL(redirectUrl)) {
+    if (redirectUrl != null) {
       signupURL += `?redirectUrl=${encodeURIComponent(redirectUrl)}`;
     }
   }

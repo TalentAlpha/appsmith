@@ -12,12 +12,6 @@ export interface CustomFusionChartConfig {
   dataSource?: any;
 }
 
-export interface ChartSelectedDataPoint {
-  x: any;
-  y: any;
-  seriesTitle: string;
-}
-
 const FusionCharts = require("fusioncharts");
 const plugins: Record<string, any> = {
   Charts: require("fusioncharts/fusioncharts.charts"),
@@ -57,7 +51,7 @@ export interface ChartComponentProps {
   widgetId: string;
   isVisible?: boolean;
   allowHorizontalScroll: boolean;
-  onDataPointClick: (selectedDataPoint: ChartSelectedDataPoint) => void;
+  onDataPointClick: (selectedDataPoint: { x: any; y: any }) => void;
 }
 
 const CanvasContainer = styled.div<
@@ -248,12 +242,8 @@ class ChartComponent extends React.Component<ChartComponentProps> {
     };
   };
 
-  getDatalength = () => {
-    return Object.keys(this.props.chartData).length;
-  };
-
   getChartDataSource = () => {
-    const dataLength = this.getDatalength();
+    const dataLength = Object.keys(this.props.chartData).length;
 
     if (dataLength <= 1 || this.props.chartType === "PIE_CHART") {
       return {
@@ -311,30 +301,6 @@ class ChartComponent extends React.Component<ChartComponentProps> {
     };
   };
 
-  // return series title name for in clicked data point
-  getSeriesTitle = (data: any) => {
-    // custom chart have mentioned seriesName in dataSource
-    if (this.props.chartType === "CUSTOM_FUSION_CHART") {
-      // custom chart have mentioned seriesName in dataSource
-      return get(
-        this.props,
-        `customFusionChartConfig.dataSource.seriesName`,
-        "",
-      );
-    } else {
-      const dataLength = this.getDatalength();
-      // if pie chart or other chart have single dataset,
-      // get seriesName from chartData
-      if (dataLength <= 1 || this.props.chartType === "PIE_CHART") {
-        const chartData: AllChartData = this.props.chartData;
-        const firstKey = Object.keys(chartData)[0] as string;
-        return get(chartData, `${firstKey}.seriesName`, "");
-      }
-      // other charts return datasetName from clicked data point
-      return get(data, "datasetName", "");
-    }
-  };
-
   createGraph = () => {
     if (this.props.chartType === "CUSTOM_FUSION_CHART") {
       const chartConfig = {
@@ -344,11 +310,9 @@ class ChartComponent extends React.Component<ChartComponentProps> {
         events: {
           dataPlotClick: (evt: any) => {
             const data = evt.data;
-            const seriesTitle = this.getSeriesTitle(data);
             this.props.onDataPointClick({
               x: data.categoryLabel,
               y: data.dataValue,
-              seriesTitle,
             });
           },
         },
@@ -372,11 +336,9 @@ class ChartComponent extends React.Component<ChartComponentProps> {
       events: {
         dataPlotClick: (evt: any) => {
           const data = evt.data;
-          const seriesTitle = this.getSeriesTitle(data);
           this.props.onDataPointClick({
             x: data.categoryLabel,
             y: data.dataValue,
-            seriesTitle,
           });
         },
       },
@@ -413,17 +375,6 @@ class ChartComponent extends React.Component<ChartComponentProps> {
           renderAt: this.props.widgetId + "chart-container",
           width: "100%",
           height: "100%",
-          events: {
-            dataPlotClick: (evt: any) => {
-              const data = evt.data;
-              const seriesTitle = this.getSeriesTitle(data);
-              this.props.onDataPointClick({
-                x: data.categoryLabel,
-                y: data.dataValue,
-                seriesTitle,
-              });
-            },
-          },
           ...this.getCustomFusionChartDataSource(),
         };
         this.chartInstance = new FusionCharts(chartConfig);

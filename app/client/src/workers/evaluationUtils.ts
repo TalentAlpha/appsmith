@@ -8,7 +8,8 @@ import {
   isDynamicValue,
   PropertyEvaluationErrorType,
 } from "utils/DynamicBindingUtils";
-import { validate } from "./validations";
+import { WidgetProps } from "widgets/BaseWidget";
+import { VALIDATORS } from "./validations";
 import { Diff } from "deep-diff";
 import {
   DataTree,
@@ -19,8 +20,8 @@ import {
   ENTITY_TYPE,
 } from "entities/DataTree/dataTreeFactory";
 import _ from "lodash";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import { WidgetTypeConfigMap } from "utils/WidgetFactory";
-import { ValidationConfig } from "constants/PropertyControlConstants";
 import { Severity } from "entities/AppsmithConsole";
 
 // Dropdown1.options[1].value -> Dropdown1.options[1]
@@ -311,17 +312,20 @@ export const getImmediateParentsOfPropertyPaths = (
 };
 
 export function validateWidgetProperty(
-  config: ValidationConfig,
-  value: unknown,
-  props: Record<string, unknown>,
+  property: string,
+  value: any,
+  props: WidgetProps,
+  validation?: VALIDATION_TYPES,
+  dataTree?: DataTree,
 ) {
-  if (!config) {
-    return {
-      isValid: true,
-      parsed: value,
-    };
+  if (!validation) {
+    return { isValid: true, parsed: value };
   }
-  return validate(config, value, props);
+  const validator = VALIDATORS[validation];
+  if (!validator) {
+    return { isValid: true, parsed: value };
+  }
+  return validator(value, props, dataTree);
 }
 
 export function getValidatedTree(tree: DataTree) {
@@ -335,9 +339,11 @@ export function getValidatedTree(tree: DataTree) {
       const value = _.get(entity, property);
       // Pass it through parse
       const { isValid, message, parsed, transformed } = validateWidgetProperty(
-        validation,
+        property,
         value,
         entity,
+        validation,
+        tree,
       );
       _.set(parsedEntity, property, parsed);
       const evaluatedValue = isValid
@@ -539,7 +545,13 @@ export function getSafeToRenderDataTree(
     Object.entries(entity.validationPaths).forEach(([property, validation]) => {
       const value = _.get(entity, property);
       // Pass it through parse
-      const { parsed } = validateWidgetProperty(validation, value, entity);
+      const { parsed } = validateWidgetProperty(
+        property,
+        value,
+        entity,
+        validation,
+        tree,
+      );
       _.set(safeToRenderEntity, property, parsed);
     });
     // Set derived values to undefined or else they would go as bindings

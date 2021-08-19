@@ -4,7 +4,6 @@ import com.appsmith.server.constants.Security;
 import com.appsmith.server.exceptions.AppsmithError;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.server.DefaultServerRedirectStrategy;
@@ -74,12 +73,7 @@ public class AuthenticationFailureHandler implements ServerAuthenticationFailure
                 && AppsmithError.SIGNUP_DISABLED.getAppErrorCode().toString().equals(((OAuth2AuthenticationException) exception).getError().getErrorCode())) {
             defaultRedirectLocation = URI.create("/user/signup?error=" + URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8));
         } else {
-            if (exception instanceof InternalAuthenticationServiceException) {
-                defaultRedirectLocation = URI.create(originHeader + "/user/login?error=true&message=" +
-                    URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8));
-            } else {
-                defaultRedirectLocation = URI.create(originHeader + "/user/login?error=true");
-            }
+            defaultRedirectLocation = URI.create(originHeader + "/user/login?error=true");
         }
 
         return this.redirectStrategy.sendRedirect(exchange, defaultRedirectLocation);

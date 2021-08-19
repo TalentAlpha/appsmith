@@ -8,8 +8,6 @@ import handleNewCommentThreadEvent from "./handleNewCommentThreadEvent";
 import handleUpdateCommentThreadSuccess from "./handleUpdateCommentThreadSuccess";
 import handleUpdateCommentThreadEvent from "./handleUpdateCommentThreadEvent";
 import handleUpdateCommentEvent from "./handleUpdateCommentEvent";
-import handleDeleteCommentEvent from "./handleDeleteCommentEvent";
-import handleDeleteCommentThreadEvent from "./handleDeleteCommentThreadEvent";
 
 import { CommentsReduxState } from "./interfaces";
 import {
@@ -22,7 +20,6 @@ import {
 } from "entities/Comments/CommentsInterfaces";
 
 import { options as filterOptions } from "comments/AppComments/AppCommentsFilterPopover";
-import { deleteCommentFromState, deleteCommentThreadFromState } from "./common";
 
 const initialState: CommentsReduxState = {
   commentThreadsMap: {},
@@ -36,13 +33,13 @@ const initialState: CommentsReduxState = {
   unreadCommentThreadsCount: 0,
   visibleCommentThreadId: "",
   isIntroCarouselVisible: false,
+  areCommentsEnabled: false,
   unsubscribed: false,
 };
 
 /**
  * Action constants with suffix as `EVENT` are a result of socket updates
  * They are handled separately
- * TODO: look into merging `_EVENT` handlers (for socket events) and local actions
  */
 const commentsReducer = createReducer(initialState, {
   // Only one unpublished comment threads exists at a time
@@ -76,7 +73,8 @@ const commentsReducer = createReducer(initialState, {
     action: ReduxAction<boolean>,
   ) => ({
     ...state,
-    isCommentMode: action.payload,
+    isCommentMode: action.payload && state.areCommentsEnabled,
+    isIntroCarouselVisible: false,
   }),
   [ReduxActionTypes.CREATE_COMMENT_THREAD_REQUEST]: (
     state: CommentsReduxState,
@@ -147,9 +145,15 @@ const commentsReducer = createReducer(initialState, {
   ) => {
     const { commentId, threadId } = action.payload;
 
-    const updatedState = deleteCommentFromState(state, commentId, threadId);
+    const commentThread = state.commentThreadsMap[threadId];
+    state.commentThreadsMap[threadId] = {
+      ...commentThread,
+      comments: commentThread.comments.filter(
+        (comment) => comment.id !== commentId,
+      ),
+    };
 
-    return { ...updatedState };
+    return { ...state };
   },
   [ReduxActionTypes.SET_SHOULD_SHOW_RESOLVED_COMMENTS]: (
     state: CommentsReduxState,
@@ -214,14 +218,26 @@ const commentsReducer = createReducer(initialState, {
     action: ReduxAction<{ commentThreadId: string; appId: string }>,
   ) => {
     const { appId, commentThreadId } = action.payload;
+    if (!state.applicationCommentThreadsByRef[appId]) return false;
 
-    const updatedState = deleteCommentThreadFromState(
-      state,
-      commentThreadId,
-      appId,
-    );
+    const { refId } = state.commentThreadsMap[commentThreadId];
 
-    return { ...updatedState };
+    let refComments = state.applicationCommentThreadsByRef[appId][refId];
+    if (refComments) {
+      refComments = refComments.filter(
+        (threadId: string) => threadId !== commentThreadId,
+      );
+    }
+
+    delete state.commentThreadsMap[commentThreadId];
+
+    state.commentThreadsMap = { ...state.commentThreadsMap };
+
+    state.applicationCommentThreadsByRef[appId as string] = {
+      ...state.applicationCommentThreadsByRef[appId as string],
+    };
+
+    return { ...state };
   },
   [ReduxActionTypes.SHOW_COMMENTS_INTRO_CAROUSEL]: (
     state: CommentsReduxState,
@@ -235,6 +251,13 @@ const commentsReducer = createReducer(initialState, {
     ...state,
     isIntroCarouselVisible: false,
   }),
+  [ReduxActionTypes.SET_ARE_COMMENTS_ENABLED]: (
+    state: CommentsReduxState,
+    action: ReduxAction<boolean>,
+  ) => ({
+    ...state,
+    areCommentsEnabled: action.payload,
+  }),
   [ReduxActionTypes.UPDATE_COMMENT_EVENT]: (
     state: CommentsReduxState,
     action: ReduxAction<Comment>,
@@ -246,16 +269,8 @@ const commentsReducer = createReducer(initialState, {
     action: ReduxAction<number>,
   ) => ({
     ...state,
-    unreadCommentThreadsCount: Math.max(action.payload, 0),
+    unreadCommentThreadsCount: action.payload || 0,
   }),
-  [ReduxActionTypes.DELETE_COMMENT_EVENT]: (
-    state: CommentsReduxState,
-    action: ReduxAction<Comment>,
-  ) => handleDeleteCommentEvent(state, action),
-  [ReduxActionTypes.DELETE_COMMENT_THREAD_EVENT]: (
-    state: CommentsReduxState,
-    action: ReduxAction<CommentThread>,
-  ) => handleDeleteCommentThreadEvent(state, action),
 });
 
 export default commentsReducer;

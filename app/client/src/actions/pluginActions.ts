@@ -1,7 +1,6 @@
 import {
   ReduxAction,
   ReduxActionTypes,
-  ReduxActionErrorTypes,
   ReduxActionWithoutPayload,
 } from "constants/ReduxActionConstants";
 import { PluginFormPayload } from "api/PluginApi";
@@ -38,25 +37,4 @@ export const fetchPluginFormConfigSuccess = (
 ): ReduxAction<PluginFormPayloadWithId> => ({
   type: ReduxActionTypes.FETCH_PLUGIN_FORM_SUCCESS,
   payload,
-});
-
-export const fetchPluginFormConfigError = (
-  payload: GetPluginFormConfigRequest,
-): ReduxAction<GetPluginFormConfigRequest> => ({
-  type: ReduxActionErrorTypes.FETCH_PLUGIN_FORM_ERROR,
-  payload,
-});
-
-export interface GetPluginFormConfigRequest {
-  id: string;
-}
-
-// To fetch plugin form config for individual plugin
-export const fetchPluginFormConfig = ({
-  pluginId: id,
-}: {
-  pluginId: GetPluginFormConfigRequest;
-}) => ({
-  type: ReduxActionTypes.GET_PLUGIN_FORM_CONFIG_INIT,
-  payload: id,
 });

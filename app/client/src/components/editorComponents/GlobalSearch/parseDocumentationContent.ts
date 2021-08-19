@@ -20,25 +20,19 @@ export const htmlToElement = (html: string) => {
  */
 const strip = (text: string) => text.replace(/{% .*?%}/gm, "");
 
-export const YT_EMBEDDING_SELECTION_REGEX = [
-  /{% embed url="<a href="https:\/\/www.youtube.com\/watch\?v=(.*?)\&.*? %}/m,
-  /{% embed url="<a href="https:\/\/youtu.be.*?>https:\/\/youtu.be\/(.*?)".*? %}/m,
-];
+export const YT_EMBEDDING_SELECTION_REGEX = /{% embed url="<a href="https:\/\/www.youtube.com\/watch\?v=(.*?)\&.*? %}/m;
 
-const getYtIframe = (videoId: string) => {
-  return `<iframe width="100%" height="280" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-};
-const updateYoutubeEmbeddingsWithIframe = (text: string) => {
+const updateYoutubeEmbedingsWithIframe = (text: string) => {
   let docString = text;
   let match;
-  YT_EMBEDDING_SELECTION_REGEX.forEach((ytRegex) => {
-    while ((match = ytRegex.exec(docString)) !== null) {
-      // gitbook adds \\ in front of a _ char in an id. TO remove that we have to do this.
-      let videoId = match[1].replaceAll("%5C", "");
-      videoId = videoId.replaceAll("\\", "");
-      docString = docString.replace(ytRegex, getYtIframe(videoId));
-    }
-  });
+  while ((match = YT_EMBEDDING_SELECTION_REGEX.exec(docString)) !== null) {
+    // gitbook adds \\ in front of a _ char in an id. TO remove that we have to do this.
+    const videoId = match[1].replaceAll("%5C", "");
+    docString = docString.replace(
+      YT_EMBEDDING_SELECTION_REGEX,
+      `<iframe width="100%" height="280" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`,
+    );
+  }
   return docString;
 };
 
@@ -89,6 +83,8 @@ const updateDocumentDescriptionTitle = (documentObj: any, item: any) => {
     // append documentation button after title:
     const ctaElement = getDocumentationCTA(path) as Node;
     firstChild.appendChild(ctaElement);
+
+    removeBadHighlights(firstChild, item.query);
   }
 };
 
@@ -159,9 +155,6 @@ const parseDocumentationContent = (item: any): string | undefined => {
       } catch (e) {}
     });
 
-    // update description title
-    updateDocumentDescriptionTitle(documentObj, item);
-
     // Combine adjacent highlighted nodes into a single one
     let adjacentMatches: string[] = [];
     const letterRegex = /[a-zA-Z]/g;
@@ -229,7 +222,9 @@ const parseDocumentationContent = (item: any): string | undefined => {
 
     // Remove highlight for nodes that don't match well
     removeBadHighlights(documentObj, query);
-    let content = updateYoutubeEmbeddingsWithIframe(documentObj.body.innerHTML);
+    // update description title
+    updateDocumentDescriptionTitle(documentObj, item);
+    let content = updateYoutubeEmbedingsWithIframe(documentObj.body.innerHTML);
     content = strip(content).trim();
     return content;
   } catch (e) {

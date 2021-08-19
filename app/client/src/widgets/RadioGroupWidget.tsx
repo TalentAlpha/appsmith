@@ -3,7 +3,7 @@ import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
 import { WidgetType } from "constants/WidgetConstants";
 import RadioGroupComponent from "components/designSystems/blueprint/RadioGroupComponent";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import * as Sentry from "@sentry/react";
 import withMeta, { WithMeta } from "./MetaHOC";
 import { EvaluationSubstitutionType } from "entities/DataTree/dataTreeFactory";
@@ -23,36 +23,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.ARRAY,
-              unique: ["value"],
-              params: {
-                children: {
-                  type: ValidationTypes.OBJECT,
-                  params: {
-                    required: true,
-                    allowedKeys: [
-                      {
-                        name: "label",
-                        type: ValidationTypes.TEXT,
-                        params: {
-                          default: "",
-                          required: true,
-                        },
-                      },
-                      {
-                        name: "value",
-                        type: ValidationTypes.TEXT,
-                        params: {
-                          default: "",
-                          required: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
+            validation: VALIDATION_TYPES.OPTIONS_DATA,
             evaluationSubstitutionType:
               EvaluationSubstitutionType.SMART_SUBSTITUTE,
           },
@@ -64,7 +35,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
             controlType: "INPUT_TEXT",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             propertyName: "isRequired",
@@ -74,7 +45,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             helpText: "Controls the visibility of the widget",
@@ -84,7 +55,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             propertyName: "isDisabled",
@@ -94,7 +65,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },
@@ -144,7 +115,7 @@ class RadioGroupWidget extends BaseWidget<RadioGroupWidgetProps, WidgetState> {
         key={this.props.widgetId}
         label={`${this.props.label}`}
         onRadioSelectionChange={this.onRadioSelectionChange}
-        options={this.props.options || []}
+        options={this.props.options}
         selectedOptionValue={this.props.selectedOptionValue}
         widgetId={this.props.widgetId}
       />
@@ -173,7 +144,7 @@ export interface RadioOption {
 
 export interface RadioGroupWidgetProps extends WidgetProps, WithMeta {
   label: string;
-  options?: RadioOption[];
+  options: RadioOption[];
   selectedOptionValue: string;
   onSelectionChange: string;
   defaultOptionValue: string;

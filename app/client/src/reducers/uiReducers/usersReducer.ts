@@ -18,7 +18,6 @@ const initialState: UsersReduxState = {
   error: "",
   current: undefined,
   currentUser: undefined,
-  featureFlagFetched: false,
 };
 
 const usersReducer = createReducer(initialState, {
@@ -127,16 +126,6 @@ const usersReducer = createReducer(initialState, {
     currentUser: DefaultCurrentUserDetails,
     users: [DefaultCurrentUserDetails],
   }),
-  [ReduxActionTypes.FETCH_FEATURE_FLAGS_SUCCESS]: (state: UsersReduxState) => ({
-    ...state,
-    featureFlagFetched: true,
-  }),
-  [ReduxActionErrorTypes.FETCH_FEATURE_FLAGS_ERROR]: (
-    state: UsersReduxState,
-  ) => ({
-    ...state,
-    featureFlagFetched: true,
-  }),
 });
 
 export interface PropertyPanePositionConfig {
@@ -157,7 +146,6 @@ export interface UsersReduxState {
   currentUser?: User;
   error: string;
   propPanePreferences?: PropertyPanePositionConfig;
-  featureFlagFetched: boolean;
 }
 
 export default usersReducer;

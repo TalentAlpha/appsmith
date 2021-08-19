@@ -4,9 +4,7 @@ import {
   MaybeElement,
   Button,
   IconName,
-  Position,
 } from "@blueprintjs/core";
-import Tooltip from "components/ads/Tooltip";
 import styled, { css } from "styled-components";
 import { ButtonStyle } from "widgets/ButtonWidget";
 import { Theme, darkenHover, darkenActive } from "constants/DefaultTheme";
@@ -23,11 +21,7 @@ import { Toaster } from "components/ads/Toast";
 import ReCAPTCHA from "react-google-recaptcha";
 
 const getButtonColorStyles = (props: { theme: Theme } & ButtonStyleProps) => {
-  if (props.filled) {
-    return props.accent === "grey"
-      ? props.theme.colors.textOnGreyBG
-      : props.theme.colors.textOnDarkBG;
-  }
+  if (props.filled) return props.theme.colors.textOnDarkBG;
   if (props.accent) {
     if (props.accent === "secondary") {
       return props.theme.colors[AccentColorMap["primary"]];
@@ -35,39 +29,11 @@ const getButtonColorStyles = (props: { theme: Theme } & ButtonStyleProps) => {
     return props.theme.colors[AccentColorMap[props.accent]];
   }
 };
-
-const getButtonFillStyles = (props: { theme: Theme } & ButtonStyleProps) => {
-  if (props.filled) {
-    return props.accent === "grey"
-      ? props.theme.colors.dropdownIconDarkBg
-      : props.theme.colors.textOnDarkBG;
-  }
-  if (props.accent) {
-    if (props.accent === "secondary") {
-      return props.theme.colors[AccentColorMap["primary"]];
-    }
-    return props.theme.colors[AccentColorMap[props.accent]];
-  }
-};
-
-const ToolTipContent = styled.div`
-  max-width: 350px;
-`;
-
-const ToolTipWrapper = styled.div`
-  height: 100%;
-  && .bp3-popover-target {
-    height: 100%;
-    & > div {
-      height: 100%;
-    }
-  }
-`;
 
 const ButtonColorStyles = css<ButtonStyleProps>`
   color: ${getButtonColorStyles};
   svg {
-    fill: ${getButtonFillStyles};
+    fill: ${getButtonColorStyles};
   }
 `;
 
@@ -82,7 +48,6 @@ const AccentColorMap: Record<ButtonStyleName, string> = {
   primary: "primaryOld",
   secondary: "secondaryOld",
   error: "error",
-  grey: "dropdownGreyBg",
 };
 
 const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
@@ -102,11 +67,9 @@ const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
         props.accent
           ? props.theme.colors[AccentColorMap[props.accent]]
           : props.theme.colors.primary};
-
     border-radius: 0;
     font-weight: ${(props) => props.theme.fontWeights[2]};
     outline: none;
-
     &.bp3-button {
       padding: 0px 10px;
     }
@@ -117,10 +80,10 @@ const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
       display: -webkit-box;
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
+
       max-height: 100%;
       overflow: hidden;
     }
-
     &&:hover,
     &&:focus {
       ${ButtonColorStyles};
@@ -159,7 +122,7 @@ const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
   }
 `;
 
-export type ButtonStyleName = "primary" | "secondary" | "error" | "grey";
+export type ButtonStyleName = "primary" | "secondary" | "error";
 
 type ButtonStyleProps = {
   accent?: ButtonStyleName;
@@ -190,14 +153,12 @@ export enum ButtonType {
 interface RecaptchaProps {
   googleRecaptchaKey?: string;
   clickWithRecaptcha: (token: string) => void;
-  handleRecaptchaV2Loading?: (isLoading: boolean) => void;
   recaptchaV2?: boolean;
 }
 
 interface ButtonContainerProps extends ComponentProps {
   text?: string;
   icon?: MaybeElement;
-  tooltip?: string;
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   buttonStyle?: ButtonStyle;
@@ -229,17 +190,12 @@ function RecaptchaV2Component(
 ) {
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const [isInvalidKey, setInvalidKey] = useState(false);
-  const handleRecaptchaLoading = (isloading: boolean) => {
-    props.handleRecaptchaV2Loading && props.handleRecaptchaV2Loading(isloading);
-  };
   const handleBtnClick = async (event: React.MouseEvent<HTMLElement>) => {
     if (isInvalidKey) {
       // Handle incorrent google recaptcha site key
       props.handleError(event, createMessage(GOOGLE_RECAPTCHA_KEY_ERROR));
     } else {
-      handleRecaptchaLoading(true);
       try {
-        await recaptchaRef?.current?.reset();
         const token = await recaptchaRef?.current?.executeAsync();
         if (token) {
           props.clickWithRecaptcha(token);
@@ -247,9 +203,7 @@ function RecaptchaV2Component(
           // Handle incorrent google recaptcha site key
           props.handleError(event, createMessage(GOOGLE_RECAPTCHA_KEY_ERROR));
         }
-        handleRecaptchaLoading(false);
       } catch (err) {
-        handleRecaptchaLoading(false);
         // Handle error due to google recaptcha key of different domain
         props.handleError(event, createMessage(GOOGLE_RECAPTCHA_DOMAIN_ERROR));
       }
@@ -278,7 +232,12 @@ function RecaptchaV3Component(
 ) {
   // Check if a string is a valid JSON string
   const checkValidJson = (inputString: string): boolean => {
-    return !inputString.includes('"');
+    try {
+      JSON.parse(inputString);
+      return true;
+    } catch (err) {
+      return false;
+    }
   };
 
   const handleBtnClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -311,9 +270,11 @@ function RecaptchaV3Component(
   };
 
   let validGoogleRecaptchaKey = props.googleRecaptchaKey;
-  if (validGoogleRecaptchaKey && !checkValidJson(validGoogleRecaptchaKey)) {
+
+  if (validGoogleRecaptchaKey && checkValidJson(validGoogleRecaptchaKey)) {
     validGoogleRecaptchaKey = undefined;
   }
+
   const status = useScript(
     `https://www.google.com/recaptcha/api.js?render=${validGoogleRecaptchaKey}`,
   );
@@ -351,11 +312,10 @@ function BtnWrapper(
 function ButtonContainer(
   props: ButtonContainerProps & ButtonStyleProps & RecaptchaProps,
 ) {
-  const btnWrapper = (
+  return (
     <BtnWrapper
       clickWithRecaptcha={props.clickWithRecaptcha}
       googleRecaptchaKey={props.googleRecaptchaKey}
-      handleRecaptchaV2Loading={props.handleRecaptchaV2Loading}
       onClick={props.onClick}
       recaptchaV2={props.recaptchaV2}
     >
@@ -371,21 +331,6 @@ function ButtonContainer(
       />
     </BtnWrapper>
   );
-  if (props.tooltip) {
-    return (
-      <ToolTipWrapper>
-        <Tooltip
-          content={<ToolTipContent>{props.tooltip}</ToolTipContent>}
-          hoverOpenDelay={200}
-          position={Position.TOP}
-        >
-          {btnWrapper}
-        </Tooltip>
-      </ToolTipWrapper>
-    );
-  } else {
-    return btnWrapper;
-  }
 }
 
 export default ButtonContainer;

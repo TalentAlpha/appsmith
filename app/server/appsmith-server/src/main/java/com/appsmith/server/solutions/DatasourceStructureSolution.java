@@ -8,6 +8,7 @@ import com.appsmith.external.models.AuthenticationDTO;
 import com.appsmith.external.models.DatasourceStructure;
 import com.appsmith.external.models.Property;
 import com.appsmith.external.plugins.PluginExecutor;
+import com.appsmith.external.services.EncryptionService;
 import com.appsmith.server.acl.AclPermission;
 import com.appsmith.server.constants.FieldName;
 import com.appsmith.server.domains.Datasource;
@@ -15,7 +16,6 @@ import com.appsmith.server.exceptions.AppsmithError;
 import com.appsmith.server.exceptions.AppsmithException;
 import com.appsmith.server.helpers.PluginExecutorHelper;
 import com.appsmith.server.repositories.CustomDatasourceRepository;
-import com.appsmith.server.services.AuthenticationValidator;
 import com.appsmith.server.services.DatasourceContextService;
 import com.appsmith.server.services.DatasourceService;
 import com.appsmith.server.services.PluginService;
@@ -29,19 +29,21 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import static com.appsmith.external.models.AuthenticationDTO.AuthenticationStatus.SUCCESS;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class DatasourceStructureSolution {
 
-    public static final int GET_STRUCTURE_TIMEOUT_SECONDS = 15;
+    public static final int GET_STRUCTURE_TIMEOUT_SECONDS = 10;
 
     private final DatasourceService datasourceService;
     private final PluginExecutorHelper pluginExecutorHelper;
     private final PluginService pluginService;
     private final DatasourceContextService datasourceContextService;
+    private final EncryptionService encryptionService;
     private final CustomDatasourceRepository datasourceRepository;
-    private final AuthenticationValidator authenticationValidator;
 
     public Mono<DatasourceStructure> getStructure(String datasourceId, boolean ignoreCache) {
         return datasourceService.getById(datasourceId)
@@ -148,15 +150,14 @@ public class DatasourceStructureSolution {
         Mono<Datasource> datasourceMono = datasourceService.findById(datasourceId, AclPermission.MANAGE_DATASOURCES)
             .switchIfEmpty(Mono.error(new AppsmithException(
                 AppsmithError.ACL_NO_RESOURCE_FOUND, FieldName.DATASOURCE, datasourceId
-            )))
-            .flatMap(authenticationValidator::validateAuthentication);
+            )));
 
         return datasourceMono.flatMap(datasource -> {
 
             AuthenticationDTO auth = datasource.getDatasourceConfiguration() == null
                 || datasource.getDatasourceConfiguration().getAuthentication() == null ?
                 null : datasource.getDatasourceConfiguration().getAuthentication();
-            if (auth == null) {
+            if (auth == null || !SUCCESS.equals(auth.getAuthenticationStatus())) {
                 // Don't attempt to run query for invalid datasources.
                 return Mono.error(new AppsmithException(
                     AppsmithError.INVALID_DATASOURCE,

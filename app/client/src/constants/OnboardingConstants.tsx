@@ -46,7 +46,6 @@ export type OnboardingHelperConfig = {
     label: string;
     action: { type: string; payload?: any };
   };
-  allowMinimize: boolean;
 };
 
 export type OnboardingStepConfig = {
@@ -89,7 +88,6 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
         },
         initialStep: true,
       },
-      allowMinimize: false,
     },
   },
   [OnboardingStep.EXAMPLE_DATABASE]: {
@@ -118,16 +116,14 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
       ],
       image: {
         src:
-          "https://s3.us-east-2.amazonaws.com/assets.appsmith.com/new-query.gif",
+          "https://res.cloudinary.com/drako999/image/upload/v1611839705/Appsmith/Onboarding/new_query.gif",
       },
-      skipLabel: "Skip tour",
       cheatAction: {
         label: "Do it for me",
         action: {
           type: ReduxActionTypes.ONBOARDING_CREATE_QUERY,
         },
       },
-      allowMinimize: false,
     },
   },
   [OnboardingStep.RUN_QUERY_SUCCESS]: {
@@ -158,14 +154,12 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
         src:
           "https://res.cloudinary.com/drako999/image/upload/v1611839705/Appsmith/Onboarding/addwidget.gif",
       },
-      skipLabel: "Skip tour",
       cheatAction: {
         label: "Do it for me",
         action: {
           type: ReduxActionTypes.ONBOARDING_ADD_TABLE_WIDGET,
         },
       },
-      allowMinimize: false,
     },
   },
   [OnboardingStep.SUCCESSFUL_BINDING]: {
@@ -190,7 +184,6 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
         src:
           "https://res.cloudinary.com/drako999/image/upload/v1611906837/Appsmith/Onboarding/property_pane.gif",
       },
-      skipLabel: "Skip tour",
       action: {
         label: "Show me how",
         action: () => {
@@ -203,7 +196,6 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
           type: ReduxActionTypes.ONBOARDING_ADD_TABLEDATA_BINDING,
         },
       },
-      allowMinimize: false,
     },
   },
   [OnboardingStep.ADD_INPUT_WIDGET]: {
@@ -229,14 +221,12 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
       image: {
         src: InputDragGif,
       },
-      skipLabel: "Skip tour",
       cheatAction: {
         label: "Do it for me",
         action: {
           type: ReduxActionTypes.ONBOARDING_ADD_INPUT_WIDGET,
         },
       },
-      allowMinimize: false,
     },
   },
   [OnboardingStep.DEPLOY]: {
@@ -254,14 +244,12 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
       image: {
         src: DeployGif,
       },
-      skipLabel: "Skip tour",
       cheatAction: {
         label: "Do it for me",
         action: {
           type: ReduxActionTypes.ONBOARDING_DEPLOY,
         },
       },
-      allowMinimize: false,
     },
   },
   // Final step
@@ -307,7 +295,6 @@ export const OnboardingConfig: Record<OnboardingStep, OnboardingStepConfig> = {
           AnalyticsUtil.logEvent("ONBOARDING_NEXT_MISSION");
         },
       },
-      allowMinimize: true,
     },
   },
 };

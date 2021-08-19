@@ -1,6 +1,12 @@
 import { selectMultipleWidgetsAction } from "actions/widgetSelectionActions";
 import { OccupiedSpace } from "constants/editorConstants";
 import { ReduxAction, ReduxActionTypes } from "constants/ReduxActionConstants";
+import {
+  CONTAINER_GRID_PADDING,
+  MAIN_CONTAINER_WIDGET_ID,
+  WIDGET_PADDING,
+  GridDefaults,
+} from "constants/WidgetConstants";
 import { isEqual } from "lodash";
 import { SelectedArenaDimensions } from "pages/common/CanvasSelectionArena";
 import { all, cancel, put, select, take, takeLatest } from "redux-saga/effects";
@@ -32,7 +38,6 @@ function* selectAllWidgetsInAreaSaga(
   const {
     isMultiSelect,
     selectionArena,
-    snapSpaces,
     snapToNextColumn,
     snapToNextRow,
   }: {
@@ -40,31 +45,32 @@ function* selectAllWidgetsInAreaSaga(
     snapToNextColumn: boolean;
     snapToNextRow: boolean;
     isMultiSelect: boolean;
-    snapSpaces: {
-      snapColumnSpace: number;
-      snapRowSpace: number;
-    };
   } = action.payload;
 
-  const { snapColumnSpace, snapRowSpace } = snapSpaces;
+  const padding = CONTAINER_GRID_PADDING + WIDGET_PADDING;
+  const snapSpace = {
+    snapColumnWidth:
+      (mainContainer.rightColumn - 2 * padding) / mainContainer.snapColumns,
+    snapColumnHeight: GridDefaults.DEFAULT_GRID_ROW_HEIGHT,
+  };
   // we use snapToNextRow, snapToNextColumn to determine if the selection rectangle is inverted
   // so to snap not to the next column or row like we usually do,
   // but to snap it to the one before it coz the rectangle is inverted.
   const topLeftCorner = snapToGrid(
-    snapColumnSpace,
-    snapRowSpace,
-    selectionArena.left - (snapToNextRow ? snapColumnSpace : 0),
-    selectionArena.top - (snapToNextColumn ? snapRowSpace : 0),
+    snapSpace.snapColumnWidth,
+    snapSpace.snapColumnHeight,
+    selectionArena.left - (snapToNextRow ? snapSpace.snapColumnWidth : 0),
+    selectionArena.top - (snapToNextColumn ? snapSpace.snapColumnHeight : 0),
   );
   const bottomRightCorner = snapToGrid(
-    snapColumnSpace,
-    snapRowSpace,
+    snapSpace.snapColumnWidth,
+    snapSpace.snapColumnHeight,
     selectionArena.left + selectionArena.width,
     selectionArena.top + selectionArena.height,
   );
 
   if (widgetOccupiedSpaces) {
-    const mainContainerWidgets = widgetOccupiedSpaces[mainContainer.widgetId];
+    const mainContainerWidgets = widgetOccupiedSpaces[MAIN_CONTAINER_WIDGET_ID];
     const widgets = Object.values(mainContainerWidgets || {});
     const widgetsToBeSelected = widgets.filter((eachWidget) => {
       const { bottom, left, right, top } = eachWidget;
@@ -98,16 +104,11 @@ function* selectAllWidgetsInAreaSaga(
   }
 }
 
-function* startCanvasSelectionSaga(
-  actionPayload: ReduxAction<{ widgetId: string }>,
-) {
+function* startCanvasSelectionSaga() {
   const lastSelectedWidgets: string[] = yield select(getSelectedWidgets);
   const mainContainer: WidgetProps = yield select(
     getWidget,
-    actionPayload.payload.widgetId,
-  );
-  const lastSelectedWidgetsWithoutParent = lastSelectedWidgets.filter(
-    (each) => each !== mainContainer.parentId,
+    MAIN_CONTAINER_WIDGET_ID,
   );
   const widgetOccupiedSpaces:
     | {
@@ -117,11 +118,7 @@ function* startCanvasSelectionSaga(
   const selectionTask = yield takeLatest(
     ReduxActionTypes.SELECT_WIDGETS_IN_AREA,
     selectAllWidgetsInAreaSaga,
-    {
-      lastSelectedWidgets: lastSelectedWidgetsWithoutParent,
-      mainContainer,
-      widgetOccupiedSpaces,
-    },
+    { lastSelectedWidgets, mainContainer, widgetOccupiedSpaces },
   );
   yield take(ReduxActionTypes.STOP_CANVAS_SELECTION);
   yield cancel(selectionTask);

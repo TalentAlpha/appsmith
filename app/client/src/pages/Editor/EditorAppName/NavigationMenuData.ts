@@ -1,20 +1,18 @@
-import { useDispatch } from "react-redux";
-import { useHistory, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 import { noop } from "lodash";
 
 import { Variant } from "components/ads/common";
 import { Toaster } from "components/ads/Toast";
 import { ThemeProp } from "components/ads/common";
-import {
-  setCommentModeInUrl,
-  useHideComments,
-} from "pages/Editor/ToggleModeButton";
+import { setCommentModeInUrl } from "pages/Editor/ToggleModeButton";
+import { toggleShowGlobalSearchModal } from "actions/globalSearchActions";
+import { areCommentsEnabledForUserAndApp } from "selectors/commentsSelectors";
 import { ReduxActionTypes } from "constants/ReduxActionConstants";
-import { APPLICATIONS_URL, PAGE_LIST_EDITOR_URL } from "constants/routes";
+import { APPLICATIONS_URL } from "constants/routes";
 
 import { MenuItemData, MenuTypes } from "./NavigationMenuItem";
 import { useCallback } from "react";
-import { ExplorerURLParams } from "../Explorer/helpers";
 
 type NavigationMenuDataProps = ThemeProp & {
   applicationId: string | undefined;
@@ -28,11 +26,11 @@ export const GetNavigationMenuData = ({
   currentDeployLink,
   deploy,
   editMode,
+  theme,
 }: NavigationMenuDataProps): MenuItemData[] => {
   const dispatch = useDispatch();
-  const isHideComments = useHideComments();
+  const commentsEnabled = useSelector(areCommentsEnabledForUserAndApp);
   const history = useHistory();
-  const params = useParams<ExplorerURLParams>();
 
   const isApplicationIdPresent = !!(applicationId && applicationId.length > 0);
 
@@ -67,21 +65,13 @@ export const GetNavigationMenuData = ({
       isVisible: true,
     },
     {
-      text: "Pages",
-      onClick: () => {
-        history.push(PAGE_LIST_EDITOR_URL(params.applicationId, params.pageId));
-      },
-      type: MenuTypes.MENU,
-      isVisible: true,
-    },
-    {
       text: "View Modes",
       type: MenuTypes.PARENT,
-      isVisible: !isHideComments,
+      isVisible: !!commentsEnabled,
       children: [
         {
           text: "Edit Mode",
-          label: "V",
+          label: "E",
           onClick: () => setCommentModeInUrl(false),
           type: MenuTypes.MENU,
           isVisible: true,
@@ -117,6 +107,12 @@ export const GetNavigationMenuData = ({
       ],
     },
     {
+      text: "Shortcuts",
+      onClick: () => dispatch(toggleShowGlobalSearchModal()),
+      type: MenuTypes.MENU,
+      isVisible: true,
+    },
+    {
       text: "Help",
       type: MenuTypes.PARENT,
       isVisible: true,
@@ -130,7 +126,7 @@ export const GetNavigationMenuData = ({
         },
         {
           text: "Discord Channel",
-          onClick: () => openExternalLink("https://discord.gg/rBTTVJp"),
+          onClick: () => openExternalLink("https://discord.gg/9deFW7q4kB"),
           type: MenuTypes.MENU,
           isVisible: true,
           isOpensNewWindow: true,
@@ -158,6 +154,7 @@ export const GetNavigationMenuData = ({
       onClick: deleteApplication,
       type: MenuTypes.RECONFIRM,
       isVisible: isApplicationIdPresent,
+      style: { color: theme.colors.navigationMenu.warning },
     },
   ];
 };

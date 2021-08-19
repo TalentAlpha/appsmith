@@ -182,9 +182,8 @@ export default function evaluate(
         triggers = [...self.triggers];
       }
     } catch (e) {
-      const errorMessage = `${e.name}: ${e.message}`;
       errors.push({
-        errorMessage: errorMessage,
+        errorMessage: `${e.stack.split(`\n`)[0]}`,
         severity: Severity.ERROR,
         raw: script,
         errorType: PropertyEvaluationErrorType.PARSE,

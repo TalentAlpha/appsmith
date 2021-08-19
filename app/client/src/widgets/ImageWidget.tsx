@@ -2,7 +2,7 @@ import * as React from "react";
 import BaseWidget, { WidgetProps, WidgetState } from "./BaseWidget";
 import { WidgetType, RenderModes } from "constants/WidgetConstants";
 import ImageComponent from "components/designSystems/appsmith/ImageComponent";
-import { ValidationTypes } from "constants/WidgetValidation";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 import * as Sentry from "@sentry/react";
 import { EventType } from "constants/AppsmithActionConstants/ActionConstants";
 
@@ -24,7 +24,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             placeholderText: "Enter URL / Base64",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.IMAGE_URL },
+            validation: VALIDATION_TYPES.IMAGE,
           },
           {
             helpText: "Renders the url or Base64 when no image is provided",
@@ -34,7 +34,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             placeholderText: "Enter URL / Base64",
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.IMAGE_URL },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             helpText: "Controls the visibility of the widget",
@@ -44,7 +44,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             helpText: "Controls the max zoom of the widget",
@@ -76,10 +76,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.NUMBER,
-              params: { allowedValues: [1, 2, 4, 8, 16] },
-            },
+            validation: VALIDATION_TYPES.NUMBER,
           },
           {
             helpText:
@@ -105,12 +102,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: {
-              type: ValidationTypes.TEXT,
-              params: {
-                allowedValues: ["contain", "cover", "auto"],
-              },
-            },
+            validation: VALIDATION_TYPES.TEXT,
           },
           {
             helpText: "Controls if the image is allowed to rotate",
@@ -120,7 +112,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             isJSConvertible: false,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
           {
             helpText: "Controls if the image is allowed to download",
@@ -130,7 +122,7 @@ class ImageWidget extends BaseWidget<ImageWidgetProps, WidgetState> {
             isJSConvertible: false,
             isBindProperty: true,
             isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
+            validation: VALIDATION_TYPES.BOOLEAN,
           },
         ],
       },

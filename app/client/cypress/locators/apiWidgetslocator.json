@@ -3,7 +3,6 @@
   "searchInputPlaceholder": "//div[contains(@class, 't--dataSourceField')]//div//input",
   "searchApi": ".t--sidebar input[type=text]",
   "createapi": ".t--createBlankApiCard",
-  "createAuthApiDatasource": ".t--createAuthApiDatasource",
   "apiTxt": ".t--action-name-edit-field input",
   "popover": "//*[local-name()='g' and @id='Icon/Outline/more-vertical']",
   "moveTo": ".single-select >div:contains('Move to')",
@@ -55,6 +54,5 @@
   "renameEntity": ".single-select >div:contains('Edit Name')",
   "paramsTab": "//li//span[text()='Params']",
   "paramKey": ".t--actionConfiguration\\.queryParameters\\[0\\]\\.key\\.0",
-  "paramValue": ".t--actionConfiguration\\.queryParameters\\[0\\]\\.value\\.0",
-  "multipartTypeDropdown":"button:contains('Text')"
+  "paramValue": ".t--actionConfiguration\\.queryParameters\\[0\\]\\.value\\.0"
 }

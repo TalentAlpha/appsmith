@@ -11,27 +11,6 @@ import AnalyticsUtil from "utils/AnalyticsUtil";
 import { getCurrentApplication } from "selectors/applicationSelectors";
 import { ApplicationPayload } from "constants/ReduxActionConstants";
 import { Colors } from "constants/Colors";
-import { getQueryParams } from "utils/AppsmithUtils";
-import { getGenerateCRUDEnabledPluginMap } from "../../../selectors/entitiesSelector";
-import { GenerateCRUDEnabledPluginMap } from "../../../api/PluginApi";
-import { getIsGeneratePageInitiator } from "utils/GenerateCrudUtil";
-
-// This function remove the given key from queryParams and return string
-const removeQueryParams = (paramKeysToRemove: Array<string>) => {
-  const queryParams = getQueryParams();
-  let queryString = "";
-  const queryParamKeys = Object.keys(queryParams);
-  if (queryParamKeys && queryParamKeys.length) {
-    queryParamKeys.map((key) => {
-      if (!paramKeysToRemove.includes(key)) {
-        queryString +=
-          encodeURIComponent(key) + "=" + encodeURIComponent(queryParams[key]);
-      }
-    });
-    return "?" + queryString;
-  }
-  return "";
-};
 
 const DatasourceHomePage = styled.div`
   max-height: 95vh;
@@ -76,7 +55,6 @@ const DatasourceCard = styled.div`
   .dataSourceImageWrapper {
     width: 40px;
     height: 40px;
-    padding: 6px 0;
     border-radius: 20px;
     margin: 0 8px;
     background: #f0f0f0;
@@ -88,6 +66,7 @@ const DatasourceCard = styled.div`
       width: auto;
       margin: 0 auto;
       max-width: 100%;
+      margin-bottom: 2px;
     }
   }
 
@@ -118,7 +97,6 @@ interface DatasourceHomeScreenProps {
     replace: (data: string) => void;
     push: (data: string) => void;
   };
-  showUnsupportedPluginDialog: (callback: any) => void;
 }
 
 interface ReduxDispatchProps {
@@ -131,55 +109,18 @@ interface ReduxStateProps {
   currentApplication?: ApplicationPayload;
   pluginImages: Record<string, string>;
   isSaving: boolean;
-  generateCRUDSupportedPlugin: GenerateCRUDEnabledPluginMap;
 }
 
 type Props = ReduxStateProps & DatasourceHomeScreenProps & ReduxDispatchProps;
 
 class DatasourceHomeScreen extends React.Component<Props> {
-  goToCreateDatasource = (
-    pluginId: string,
-    pluginName: string,
-    params?: any,
-  ) => {
-    const {
-      currentApplication,
-      generateCRUDSupportedPlugin,
-      history,
-      showUnsupportedPluginDialog,
-    } = this.props;
+  goToCreateDatasource = (pluginId: string, pluginName: string) => {
+    const { currentApplication } = this.props;
 
-    const isGeneratePageInitiator = getIsGeneratePageInitiator();
-
-    /* When isGeneratePageMode is generate page (i.e., Navigating from generate-page) before creating datasource check is it supported datasource for generate template from db?
-        If YES => continue creating datasource
-        If NO => 
-          Show user a UnsupportedPluginDialog to choose 
-            1. "create unsupported datasource" 
-            2. "continue" generate page flow by selecting other supported datasource
-        goToCreateDatasource function is passed as a callback with params.skipValidPluginCheck = true.
-        Whenever user click on "continue" in UnsupportedPluginDialog, this callback function is invoked.
-    */
-    if (isGeneratePageInitiator && !params?.skipValidPluginCheck) {
-      AnalyticsUtil.logEvent("GEN_CRUD_PAGE_DATA_SOURCE_CLICK", {
-        appName: currentApplication?.name,
-        plugin: pluginName,
-        packageName: params?.packageName,
-      });
-      if (!generateCRUDSupportedPlugin[pluginId]) {
-        // show modal informing user that this will break the generate flow.
-        showUnsupportedPluginDialog(() => {
-          const URL =
-            window.location.pathname +
-            removeQueryParams(["isGeneratePageMode"]);
-          history.replace(URL);
-          this.goToCreateDatasource(pluginId, pluginName, {
-            skipValidPluginCheck: true,
-          });
-        });
-        return;
-      }
-    }
+    AnalyticsUtil.logEvent("CREATE_DATA_SOURCE_CLICK", {
+      appName: currentApplication?.name,
+      plugin: pluginName,
+    });
 
     this.props.createDatasource({
       pluginId,
@@ -187,7 +128,7 @@ class DatasourceHomeScreen extends React.Component<Props> {
   };
 
   render() {
-    const { currentApplication, pluginImages, plugins } = this.props;
+    const { pluginImages, plugins } = this.props;
 
     return (
       <DatasourceHomePage>
@@ -197,16 +138,9 @@ class DatasourceHomeScreen extends React.Component<Props> {
               <DatasourceCard
                 className="eachDatasourceCard"
                 key={`${plugin.id}_${idx}`}
-                onClick={() => {
-                  AnalyticsUtil.logEvent("CREATE_DATA_SOURCE_CLICK", {
-                    appName: currentApplication?.name,
-                    pluginName: plugin.name,
-                    pluginPackageName: plugin.packageName,
-                  });
-                  this.goToCreateDatasource(plugin.id, plugin.name, {
-                    packageName: plugin.packageName,
-                  });
-                }}
+                onClick={() =>
+                  this.goToCreateDatasource(plugin.id, plugin.name)
+                }
               >
                 <DatasourceContentWrapper>
                   <div className="dataSourceImageWrapper">
@@ -234,7 +168,6 @@ const mapStateToProps = (state: AppState): ReduxStateProps => {
     plugins: getDBPlugins(state),
     currentApplication: getCurrentApplication(state),
     isSaving: datasources.loading,
-    generateCRUDSupportedPlugin: getGenerateCRUDEnabledPluginMap(state),
   };
 };
 

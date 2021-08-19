@@ -7,7 +7,6 @@ import {
 } from "constants/ReduxActionConstants";
 import moment from "moment";
 import { PageAction } from "constants/AppsmithActionConstants/ActionConstants";
-import { CommentsReduxState } from "./commentsReducer/interfaces";
 
 const initialState: EditorReduxState = {
   initialized: false,
@@ -27,7 +26,6 @@ const initialState: EditorReduxState = {
     updatingWidgetName: false,
     updateWidgetNameError: false,
   },
-  isSnipingMode: false,
 };
 
 const editorReducer = createReducer(initialState, {
@@ -134,7 +132,7 @@ const editorReducer = createReducer(initialState, {
     state.loadingStates.cloningPageError = false;
     return { ...state };
   },
-  [ReduxActionErrorTypes.CLONE_PAGE_ERROR]: (state: EditorReduxState) => {
+  [ReduxActionTypes.CLONE_PAGE_ERROR]: (state: EditorReduxState) => {
     state.loadingStates.cloningPageError = true;
     state.loadingStates.cloningPage = false;
     return { ...state };
@@ -174,15 +172,6 @@ const editorReducer = createReducer(initialState, {
     state.loadingStates.updateWidgetNameError = true;
     return { ...state };
   },
-  [ReduxActionTypes.SET_SNIPING_MODE]: (
-    state: CommentsReduxState,
-    action: ReduxAction<boolean>,
-  ) => {
-    return {
-      ...state,
-      isSnipingMode: action.payload,
-    };
-  },
 });
 
 export interface EditorReduxState {
@@ -193,7 +182,6 @@ export interface EditorReduxState {
   currentPageId?: string;
   lastUpdatedTime?: number;
   pageActions?: PageAction[][];
-  isSnipingMode: boolean;
   loadingStates: {
     saving: boolean;
     savingError: boolean;

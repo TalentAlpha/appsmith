@@ -177,11 +177,9 @@ export default (props: PopperProps) => {
     disablePopperEvents,
   ]);
   return createPortal(
-    props.isOpen && (
-      <PopperWrapper ref={contentRef} zIndex={props.zIndex}>
-        {props.children}
-      </PopperWrapper>
-    ),
+    <PopperWrapper ref={contentRef} zIndex={props.zIndex}>
+      {props.children}
+    </PopperWrapper>,
     document.body,
   );
 };

@@ -15,8 +15,6 @@ import java.util.Set;
 @Getter
 @Setter
 public class ApplicationJson {
-
-    String appsmithVersion;
     
     Application exportedApplication;
     

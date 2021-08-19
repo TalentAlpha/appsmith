@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { useDrag, DragPreviewImage } from "react-dnd";
+import blankImage from "assets/images/blank.png";
 import { WidgetCardProps } from "widgets/BaseWidget";
 import styled from "styled-components";
 import { WidgetIcons } from "icons/WidgetIcons";
@@ -70,23 +72,32 @@ export const IconLabel = styled.h5`
 `;
 
 function WidgetCard(props: CardProps) {
-  const { setDraggingNewWidget } = useWidgetDragResize();
+  const { setIsDragging } = useWidgetDragResize();
   const { deselectAll } = useWidgetSelection();
-
-  const onDragStart = (e: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    deselectAll();
-    AnalyticsUtil.logEvent("WIDGET_CARD_DRAG", {
-      widgetType: props.details.type,
-      widgetName: props.details.widgetCardName,
-    });
-    setDraggingNewWidget &&
-      setDraggingNewWidget(true, {
-        ...props.details,
-        widgetId: generateReactKey(),
+  // Generate a new widgetId which can be used in the future for this widget.
+  const [widgetId, setWidgetId] = useState(generateReactKey());
+  const [, drag, preview] = useDrag({
+    item: { ...props.details, widgetId },
+    begin: () => {
+      AnalyticsUtil.logEvent("WIDGET_CARD_DRAG", {
+        widgetType: props.details.type,
+        widgetName: props.details.widgetCardName,
       });
-  };
+      setIsDragging && setIsDragging(true);
+      deselectAll();
+    },
+    end: (widget, monitor) => {
+      AnalyticsUtil.logEvent("WIDGET_CARD_DROP", {
+        widgetType: props.details.type,
+        widgetName: props.details.widgetCardName,
+        didDrop: monitor.didDrop(),
+      });
+      // We've finished dragging, generate a new widgetId to be used for next drag.
+      setWidgetId(generateReactKey());
+      setIsDragging && setIsDragging(false);
+    },
+  });
+
   const iconType: string = props.details.type;
   const Icon = WidgetIcons[iconType];
   const className = `t--widget-card-draggable-${props.details.type
@@ -94,13 +105,16 @@ function WidgetCard(props: CardProps) {
     .join("")
     .toLowerCase()}`;
   return (
-    <Wrapper className={className} draggable onDragStart={onDragStart}>
-      <div>
-        <Icon />
-        <IconLabel>{props.details.widgetCardName}</IconLabel>
-        {props.details.isBeta && <BetaLabel>Beta</BetaLabel>}
-      </div>
-    </Wrapper>
+    <>
+      <DragPreviewImage connect={preview} src={blankImage} />
+      <Wrapper className={className} ref={drag}>
+        <div>
+          <Icon />
+          <IconLabel>{props.details.widgetCardName}</IconLabel>
+          {props.details.isBeta && <BetaLabel>Beta</BetaLabel>}
+        </div>
+      </Wrapper>
+    </>
   );
 }
 

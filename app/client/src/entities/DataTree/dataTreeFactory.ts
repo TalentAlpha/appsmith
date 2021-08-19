@@ -12,7 +12,7 @@ import { AppDataState } from "reducers/entityReducers/appReducer";
 import { DependencyMap, DynamicPath } from "utils/DynamicBindingUtils";
 import { generateDataTreeAction } from "entities/DataTree/dataTreeAction";
 import { generateDataTreeWidget } from "entities/DataTree/dataTreeWidget";
-import { ValidationConfig } from "constants/PropertyControlConstants";
+import { VALIDATION_TYPES } from "constants/WidgetValidation";
 
 export type ActionDescription<T> = {
   type: string;
@@ -62,7 +62,7 @@ export interface DataTreeAction
 export interface DataTreeWidget extends WidgetProps {
   bindingPaths: Record<string, EvaluationSubstitutionType>;
   triggerPaths: Record<string, boolean>;
-  validationPaths: Record<string, ValidationConfig>;
+  validationPaths: Record<string, VALIDATION_TYPES>;
   ENTITY_TYPE: ENTITY_TYPE.WIDGET;
   logBlackList: Record<string, true>;
 }

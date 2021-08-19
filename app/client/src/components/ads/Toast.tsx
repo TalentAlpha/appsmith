@@ -60,9 +60,6 @@ const ToastBody = styled.div<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // Using word-break here, as overflow-wrap: anywhere
-  // has no effect in safari
-  word-break: break-word;
   overflow-wrap: anywhere;
 
   div > .${Classes.ICON} {

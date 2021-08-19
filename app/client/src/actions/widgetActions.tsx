@@ -3,7 +3,6 @@ import {
   ReduxAction,
   ReduxActionErrorTypes,
   ReduxActionWithoutPayload,
-  WidgetReduxActionTypes,
 } from "constants/ReduxActionConstants";
 import {
   ExecuteActionPayload,
@@ -13,7 +12,6 @@ import { BatchAction, batchAction } from "actions/batchActions";
 import PerformanceTracker, {
   PerformanceTransactionName,
 } from "utils/PerformanceTracker";
-import { WidgetProps } from "widgets/BaseWidget";
 
 export const executeAction = (
   payload: ExecuteActionPayload,
@@ -132,7 +130,7 @@ export const deleteSelectedWidget = (
   disallowUndo = false,
 ) => {
   return {
-    type: WidgetReduxActionTypes.WIDGET_DELETE,
+    type: ReduxActionTypes.WIDGET_DELETE,
     payload: {
       isShortcut,
       disallowUndo,
@@ -146,9 +144,9 @@ export const cutWidget = () => {
   };
 };
 
-export const addSuggestedWidget = (payload: Partial<WidgetProps>) => {
+export const addTableWidgetFromQuery = (queryName: string) => {
   return {
-    type: ReduxActionTypes.ADD_SUGGESTED_WIDGET,
-    payload,
+    type: ReduxActionTypes.ADD_TABLE_WIDGET_FROM_QUERY,
+    payload: queryName,
   };
 };

@@ -67,7 +67,7 @@ const applicationsReducer = createReducer(initialState, {
       deletingApplication: false,
     };
   },
-  [ReduxActionErrorTypes.DELETE_APPLICATION_ERROR]: (
+  [ReduxActionTypes.DELETE_APPLICATION_ERROR]: (
     state: ApplicationsReduxState,
   ) => {
     return { ...state, deletingApplication: false };
@@ -272,7 +272,7 @@ const applicationsReducer = createReducer(initialState, {
       isSavingOrgInfo: false,
     };
   },
-  [ReduxActionErrorTypes.SAVE_ORG_ERROR]: (state: ApplicationsReduxState) => {
+  [ReduxActionTypes.SAVE_ORG_ERROR]: (state: ApplicationsReduxState) => {
     return {
       ...state,
       isSavingOrgInfo: false,
@@ -302,7 +302,7 @@ const applicationsReducer = createReducer(initialState, {
       applicationList: [...state.applicationList, action.payload],
     };
   },
-  [ReduxActionErrorTypes.DUPLICATE_APPLICATION_ERROR]: (
+  [ReduxActionTypes.DUPLICATE_APPLICATION_ERROR]: (
     state: ApplicationsReduxState,
   ) => {
     return { ...state, duplicatingApplication: false };
