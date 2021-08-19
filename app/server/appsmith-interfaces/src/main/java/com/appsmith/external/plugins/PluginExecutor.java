@@ -169,7 +169,6 @@ public interface PluginExecutor<C> extends ExtensionPoint {
                             // In case of a conflict, we pick the older value
                             (oldValue, newValue) -> oldValue)
                     );
-
             MustacheHelper.renderFieldValues(datasourceConfiguration, replaceParamsMap);
             MustacheHelper.renderFieldValues(actionConfiguration, replaceParamsMap);
         }

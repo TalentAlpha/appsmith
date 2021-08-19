@@ -58,11 +58,11 @@ public class RequestCaptureFilter implements ExchangeFilterFunction {
         MultiValueMap<String, String> headers = CollectionUtils.toMultiValueMap(new LinkedCaseInsensitiveMap<>(8, Locale.ENGLISH));
         AtomicBoolean isMultipart = new AtomicBoolean(false);
         request.headers().forEach((header, value) -> {
-            if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(header) || "api_key".equalsIgnoreCase(header)) {
-                headers.add(header, "****");
-            } else {
-                headers.addAll(header, value);
-            }
+//            if (HttpHeaders.AUTHORIZATION.equalsIgnoreCase(header) || "api_key".equalsIgnoreCase(header)) {
+//                headers.add(header, "****");
+//            } else {
+            headers.addAll(header, value);
+//            }
             if (HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(header) && MULTIPART_FORM_DATA_VALUE.equalsIgnoreCase(value.get(0))) {
                 isMultipart.set(true);
             }

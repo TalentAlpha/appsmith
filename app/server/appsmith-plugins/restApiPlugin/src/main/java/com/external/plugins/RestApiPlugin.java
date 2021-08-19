@@ -198,6 +198,7 @@ public class RestApiPlugin extends BasePlugin {
                                                          ActionConfiguration actionConfiguration,
                                                          List<Map.Entry<String, String>> insertedParams) {
 
+
             // Initializing object for error condition
             ActionExecutionResult errorResult = new ActionExecutionResult();
             errorResult.setStatusCode(AppsmithPluginError.PLUGIN_ERROR.getAppErrorCode().toString());
@@ -255,6 +256,7 @@ public class RestApiPlugin extends BasePlugin {
                 reqContentType = addHeadersToRequestAndGetContentType(
                         webClientBuilder, datasourceConfiguration.getHeaders());
             }
+
 
             if (actionConfiguration.getHeaders() != null) {
                 reqContentType = addHeadersToRequestAndGetContentType(

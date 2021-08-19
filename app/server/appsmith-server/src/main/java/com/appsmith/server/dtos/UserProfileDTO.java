@@ -19,4 +19,6 @@ public class UserProfileDTO {
 
     boolean isEmptyInstance = false;
 
+    String tokenId;
+
 }
