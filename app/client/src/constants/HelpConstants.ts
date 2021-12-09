@@ -1,4 +1,8 @@
 export const HelpMap: Record<string, { path: string; searchKey: string }> = {
+  AUDIO_WIDGET: {
+    path: "/widget-reference/audio",
+    searchKey: "Audio",
+  },
   CONTAINER_WIDGET: {
     path: "/widget-reference/container",
     searchKey: "Container",
@@ -139,6 +143,14 @@ export const HelpMap: Record<string, { path: string; searchKey: string }> = {
     path: "/widget-reference/menu-button",
     searchKey: "Menu Button",
   },
+  TREE_MULTI_SELECT_WIDGET: {
+    path: "/widget-reference/tree-multi-select",
+    searchKey: "Tree Multi Select",
+  },
+  TREE_SINGLE_SELECT_WIDGET: {
+    path: "/widget-reference/tree-single-select",
+    searchKey: "Tree Single Select",
+  },
   ICON_BUTTON_WIDGET: {
     path: "/widget-reference/icon-button",
     searchKey: "Icon Button",
@@ -154,6 +166,10 @@ export const HelpMap: Record<string, { path: string; searchKey: string }> = {
   AUDIO_RECORDER_WIDGET: {
     path: "/widget-reference/audio-recorder",
     searchKey: "Audio Recorder",
+  },
+  SWITCH_GROUP_WIDGET: {
+    path: "/widget-reference/switch-group",
+    searchKey: "Switch Group",
   },
 };
 

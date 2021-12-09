@@ -1,7 +1,7 @@
 import React from "react";
-import LandingPage from "./Landing";
+import LandingPage from "./Welcome";
 import SetupForm from "./SetupForm";
-import requiresAuthHOC from "pages/UserAuth/requiresAuthHOC";
+import { requiresUnauth } from "pages/UserAuth/requiresAuthHOC";
 import { useState } from "react";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
@@ -12,7 +12,7 @@ import { Redirect } from "react-router";
 const StyledSetupContainer = styled.div`
   background-color: ${(props) => props.theme.colors.homepageBackground};
   height: 100vh;
-  overflow: auto;
+  overflow: hidden;
 `;
 
 function Setup() {
@@ -24,7 +24,10 @@ function Setup() {
   return (
     <StyledSetupContainer>
       {showLandingPage ? (
-        <LandingPage onGetStarted={() => setShowLandingPage(false)} />
+        <LandingPage
+          forSuperUser
+          onGetStarted={() => setShowLandingPage(false)}
+        />
       ) : (
         <SetupForm />
       )}
@@ -32,4 +35,4 @@ function Setup() {
   );
 }
 
-export default requiresAuthHOC(Setup);
+export default requiresUnauth(Setup);

@@ -48,6 +48,7 @@ import AnalyticsUtil from "utils/AnalyticsUtil";
 import { Plugin } from "api/PluginApi";
 import { getCurrentPageId } from "selectors/editorSelectors";
 import { WidgetProps } from "widgets/BaseWidget";
+import * as log from "loglevel";
 
 // Saga to format action request values to be shown in the debugger
 function* formatActionRequestSaga(
@@ -172,6 +173,21 @@ function* logDependentEntityProperties(payload: Log) {
   );
 }
 
+function* onTriggerPropertyUpdates(payload: Log) {
+  const dataTree: DataTree = yield select(getDataTree);
+  const source = payload.source;
+
+  if (!source || !source.propertyPath) return;
+  const widget = dataTree[source.name];
+  // If property is not a trigger property we ignore
+  if (!isWidget(widget) || !(source.propertyPath in widget.triggerPaths))
+    return;
+  // If the value of the property is empty(or set to 'No Action')
+  if (widget[source.propertyPath] === "") {
+    AppsmithConsole.deleteError(`${source.id}-${source.propertyPath}`);
+  }
+}
+
 function* debuggerLogSaga(action: ReduxAction<Log>) {
   const { payload } = action;
 
@@ -179,6 +195,7 @@ function* debuggerLogSaga(action: ReduxAction<Log>) {
     case LOG_TYPE.WIDGET_UPDATE:
       yield put(debuggerLog(payload));
       yield call(logDependentEntityProperties, payload);
+      yield call(onTriggerPropertyUpdates, payload);
       return;
     case LOG_TYPE.ACTION_UPDATE:
       yield put(debuggerLog(payload));
@@ -193,6 +210,11 @@ function* debuggerLogSaga(action: ReduxAction<Log>) {
     case LOG_TYPE.JS_PARSE_SUCCESS:
       AppsmithConsole.deleteError(payload.source?.id ?? "");
       break;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    // Fall through intentional here
+    case LOG_TYPE.TRIGGER_EVAL_ERROR:
+      yield put(debuggerLog(payload));
     case LOG_TYPE.EVAL_ERROR:
     case LOG_TYPE.EVAL_WARNING:
     case LOG_TYPE.WIDGET_PROPERTY_VALIDATION_ERROR:
@@ -294,13 +316,13 @@ function* logDebuggerErrorAnalyticsSaga(
       // Sending plugin name for actions
       AnalyticsUtil.logEvent(payload.eventName, {
         entityType: pluginName,
-        propertyPath: "",
+        propertyPath: payload.propertyPath,
         errorMessages: payload.errorMessages,
         pageId: currentPageId,
       });
     }
   } catch (e) {
-    console.error(e);
+    log.error(e);
   }
 }
 

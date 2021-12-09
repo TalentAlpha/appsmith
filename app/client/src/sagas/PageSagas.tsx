@@ -104,8 +104,10 @@ import {
   getIsFirstTimeUserOnboardingEnabled,
   getFirstTimeUserOnboardingApplicationId,
 } from "selectors/onboardingSelectors";
+import { fetchJSCollectionsForPage } from "actions/jsActionActions";
 
 import WidgetFactory from "utils/WidgetFactory";
+
 const WidgetTypes = WidgetFactory.widgetTypes;
 
 const getWidgetName = (state: AppState, widgetId: string) =>
@@ -143,7 +145,7 @@ export function* fetchPageListSaga(
         type: ReduxActionTypes.FETCH_PAGE_LIST_SUCCESS,
         payload: {
           pages,
-          applicationId,
+          applicationId: applicationId,
         },
       });
       PerformanceTracker.stopAsyncTracking(
@@ -525,10 +527,10 @@ export function* createPageSaga(
           isFirstTimeUserOnboardingEnabled
         ) {
           history.push(
-            BUILDER_PAGE_URL(
-              createPageAction.payload.applicationId,
-              response.data.id,
-            ),
+            BUILDER_PAGE_URL({
+              applicationId: createPageAction.payload.applicationId,
+              pageId: response.data.id,
+            }),
           );
         } else {
           history.push(
@@ -600,7 +602,12 @@ export function* deletePageSaga(action: ReduxAction<DeletePageRequest>) {
         (state: AppState) => state.entities.pageList.currentPageId,
       );
       if (currentPageId === action.payload.id)
-        history.push(BUILDER_PAGE_URL(applicationId, defaultPageId));
+        history.push(
+          BUILDER_PAGE_URL({
+            applicationId: applicationId,
+            pageId: defaultPageId,
+          }),
+        );
     }
   } catch (error) {
     yield put({
@@ -619,9 +626,6 @@ export function* clonePageSaga(
   try {
     const request: ClonePageRequest = clonePageAction.payload;
     const response: FetchPageResponse = yield call(PageApi.clonePage, request);
-    const applicationId = yield select(
-      (state: AppState) => state.entities.pageList.applicationId,
-    );
     const isValidResponse: boolean = yield validateResponse(response);
     if (isValidResponse) {
       yield put(
@@ -644,7 +648,13 @@ export function* clonePageSaga(
       yield put(selectMultipleWidgetsAction([]));
 
       if (!clonePageAction.payload.blockNavigation) {
-        history.push(BUILDER_PAGE_URL(applicationId, response.data.id));
+        const applicationId = yield select(getCurrentApplicationId);
+        history.push(
+          BUILDER_PAGE_URL({
+            applicationId,
+            pageId: response.data.id,
+          }),
+        );
       }
     }
   } catch (error) {
@@ -765,7 +775,6 @@ export function* updateWidgetNameSaga(
         const isValidResponse: boolean = yield validateResponse(response);
         if (isValidResponse) {
           yield updateCanvasWithDSL(response.data, pageId, layoutId);
-
           yield put(updateWidgetNameSuccess());
           // Add this to the page DSLs for entity explorer
           yield put({
@@ -781,7 +790,7 @@ export function* updateWidgetNameSaga(
           type: ReduxActionErrorTypes.UPDATE_WIDGET_NAME_ERROR,
           payload: {
             error: {
-              message: `Entity name: ${action.payload.newName} is already being used.`,
+              message: `Entity name: ${action.payload.newName} is already being used or is a restricted keyword.`,
             },
           },
         });
@@ -815,6 +824,8 @@ export function* updateCanvasWithDSL(
     widgets: normalizedWidgets.entities.canvasWidgets,
   };
   yield put(initCanvasLayout(canvasWidgetsPayload));
+  yield put(fetchActionsForPage(pageId));
+  yield put(fetchJSCollectionsForPage(pageId));
 }
 
 export function* setDataUrl() {
@@ -929,8 +940,6 @@ export function* generateTemplatePageSaga(
     const isValidResponse: boolean = yield validateResponse(response);
     if (isValidResponse) {
       const pageId = response.data.page.id;
-      const applicationId =
-        response.data.page.applicationId || request.applicationId;
       yield handleFetchedPage({
         fetchPageResponse: {
           data: response.data.page,
@@ -949,7 +958,13 @@ export function* generateTemplatePageSaga(
       // TODO : Add this to onSuccess (Redux Action)
       yield put(fetchActionsForPage(pageId, [executePageLoadActions()]));
       // TODO : Add it to onSuccessCallback
-      history.replace(BUILDER_PAGE_URL(applicationId, pageId));
+      const applicationId = yield select(getCurrentApplicationId);
+      history.replace(
+        BUILDER_PAGE_URL({
+          applicationId,
+          pageId,
+        }),
+      );
       // TODO : Add it to onSuccessCallback
       Toaster.show({
         text: "Successfully generated a page",

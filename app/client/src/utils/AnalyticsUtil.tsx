@@ -131,6 +131,7 @@ export type EventName =
   | "DEBUGGER_RESOLVED_ERROR"
   | "DEBUGGER_NEW_ERROR_MESSAGE"
   | "DEBUGGER_RESOLVED_ERROR_MESSAGE"
+  | "DEBUGGER_CONTEXT_MENU_CLICK"
   | "ADD_MOCK_DATASOURCE_CLICK"
   | "CREATE_DATA_SOURCE_AUTH_API_CLICK"
   | "GEN_CRUD_PAGE_CREATE_NEW_DATASOURCE"
@@ -166,11 +167,13 @@ export type EventName =
   | "COMMENTS_ONBOARDING_SUBMIT_BUTTON_CLICK"
   | "COMMENTS_ONBOARDING_MODAL_DISMISSED"
   | "COMMENTS_ONBOARDING_MODAL_TRIGGERED"
+  | "REPLAY_UNDO"
+  | "REPLAY_REDO"
   | "SNIPPET_CUSTOMIZE"
   | "SNIPPET_EXECUTE"
   | "SNIPPET_FILTER"
   | "SNIPPET_COPIED"
-  | "SNIPPET_CATEGORY_CLICK"
+  | "SNIPPET_LOOKUP"
   | "SIGNPOSTING_SKIP"
   | "SIGNPOSTING_CREATE_DATASOURCE_CLICK"
   | "SIGNPOSTING_CREATE_QUERY_CLICK"
@@ -203,9 +206,7 @@ class AnalyticsUtil {
       const analytics = (window.analytics = window.analytics || []);
       if (!analytics.initialize) {
         if (analytics.invoked) {
-          window.console &&
-            console.error &&
-            console.error("Segment snippet included twice.");
+          log.error("Segment snippet included twice.");
         } else {
           analytics.invoked = !0;
           analytics.methods = [
@@ -266,7 +267,7 @@ class AnalyticsUtil {
     if (userData) {
       const { segment } = getAppsmithConfigs();
       let user: any = {};
-      if (segment.enabled && segment.apiKey) {
+      if (segment.apiKey) {
         user = {
           userId: userData.username,
           email: userData.email,
@@ -299,7 +300,7 @@ class AnalyticsUtil {
   }
 
   static identifyUser(userData: User) {
-    const { segment, smartLook } = getAppsmithConfigs();
+    const { segment, sentry, smartLook } = getAppsmithConfigs();
     const windowDoc: any = window;
     const userId = userData.username;
     if (windowDoc.analytics) {
@@ -322,7 +323,7 @@ class AnalyticsUtil {
           AnalyticsUtil.cachedUserId = userId;
         }
         const userProperties = {
-          userId: AnalyticsUtil.cachedUserId,
+          userId: AnalyticsUtil.cachedAnonymoustId,
           source: "ce",
         };
         log.debug(
@@ -334,13 +335,16 @@ class AnalyticsUtil {
         );
       }
     }
-    Sentry.configureScope(function(scope) {
-      scope.setUser({
-        id: userId,
-        username: userData.username,
-        email: userData.email,
+
+    if (sentry.enabled) {
+      Sentry.configureScope(function(scope) {
+        scope.setUser({
+          id: userId,
+          username: userData.username,
+          email: userData.email,
+        });
       });
-    });
+    }
 
     if (smartLook.enabled) {
       smartlookClient.identify(userId, { email: userData.email });

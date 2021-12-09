@@ -13,6 +13,7 @@ import ErrorBoundary from "components/editorComponents/ErrorBoundry";
 import { CellWrapper } from "widgets/TableWidget/component/TableStyledWrappers";
 import AutoToolTipComponent from "widgets/TableWidget/component/AutoToolTipComponent";
 import { Theme } from "constants/DefaultTheme";
+import { uniqueId } from "lodash";
 
 interface TableProps {
   data: Record<string, any>[];
@@ -194,7 +195,24 @@ const renderCell = (props: any) => {
 };
 
 function Table(props: TableProps) {
-  const data = React.useMemo(() => props.data, [props.data]);
+  const data = React.useMemo(() => {
+    const emptyString = "";
+    /* Check for length greater than 0 of rows returned from the query for mappings keys */
+    if (props.data?.length > 0) {
+      const keys = Object.keys(props.data[0]);
+      keys.forEach((key) => {
+        if (key === emptyString) {
+          const value = props.data[0][key];
+          delete props.data[0][key];
+          props.data[0][uniqueId()] = value;
+        }
+      });
+
+      return props.data;
+    }
+
+    return [];
+  }, [props.data]);
   const columns = React.useMemo(() => {
     if (data.length) {
       return Object.keys(data[0]).map((key: any) => {
@@ -256,7 +274,7 @@ function Table(props: TableProps) {
         >
           {row.cells.map((cell: any, cellIndex: number) => {
             return (
-              <div key={cellIndex} {...cell.getCellProps()} className="td">
+              <div {...cell.getCellProps()} className="td" key={cellIndex}>
                 <CellWrapper>{cell.render("Cell")}</CellWrapper>
               </div>
             );
@@ -278,16 +296,16 @@ function Table(props: TableProps) {
             <div>
               {headerGroups.map((headerGroup: any, index: number) => (
                 <div
-                  key={index}
                   {...headerGroup.getHeaderGroupProps()}
                   className="tr"
+                  key={index}
                 >
                   {headerGroup.headers.map(
                     (column: any, columnIndex: number) => (
                       <div
-                        key={columnIndex}
                         {...column.getHeaderProps()}
                         className="th header-reorder"
+                        key={columnIndex}
                       >
                         <div
                           className={

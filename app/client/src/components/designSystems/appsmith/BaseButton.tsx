@@ -1,65 +1,224 @@
 import React from "react";
-import { IButtonProps, Button } from "@blueprintjs/core";
-import { darkenActive, darkenHover, Theme } from "constants/DefaultTheme";
-import styled, { css } from "styled-components";
-import { omit } from "lodash";
-import { ButtonStyleType, ButtonVariant } from "components/constants";
-export type ButtonStyleName = "primary" | "secondary" | "error";
+import styled from "styled-components";
+import tinycolor from "tinycolor2";
 
-type ButtonStyleProps = {
-  accent?: ButtonStyleName;
-  filled?: boolean;
-  buttonStyle?: ButtonStyleType;
-  buttonVariant?: ButtonVariant;
+import { IButtonProps, Button, Alignment } from "@blueprintjs/core";
+import { IconName } from "@blueprintjs/icons";
+
+import { Theme } from "constants/DefaultTheme";
+
+import { ThemeProp } from "components/ads/common";
+
+import _ from "lodash";
+import {
+  ButtonStyleTypes,
+  ButtonBoxShadow,
+  ButtonBoxShadowTypes,
+  ButtonBorderRadius,
+  ButtonBorderRadiusTypes,
+  ButtonStyleType,
+  ButtonVariant,
+  ButtonVariantTypes,
+} from "components/constants";
+
+const getCustomTextColor = (
+  theme: Theme,
+  backgroundColor?: string,
+  prevButtonStyle?: ButtonStyleType,
+) => {
+  if (!backgroundColor)
+    return theme.colors.button[
+      (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
+    ].solid.textColor;
+  const isDark = tinycolor(backgroundColor).isDark();
+  if (isDark) {
+    return theme.colors.button.custom.solid.light.textColor;
+  }
+  return theme.colors.button.custom.solid.dark.textColor;
 };
 
-const AccentColorMap: Record<ButtonStyleName, string> = {
-  primary: "primaryOld",
-  secondary: "secondaryOld",
-  error: "error",
-};
+const getCustomHoverColor = (
+  theme: Theme,
+  prevButtonStyle?: ButtonStyleType,
+  buttonVariant?: ButtonVariant,
+  backgroundColor?: string,
+) => {
+  if (!backgroundColor) {
+    return theme.colors.button[
+      (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
+    ][(buttonVariant || ButtonVariantTypes.PRIMARY).toLowerCase()].hoverColor;
+  }
 
-const getButtonColorStyles = (props: { theme: Theme } & ButtonStyleProps) => {
-  if (props.filled) return props.theme.colors.textOnDarkBG;
-  if (props.accent) {
-    if (props.accent === "secondary") {
-      return props.theme.colors[AccentColorMap["primary"]];
-    }
-    return props.theme.colors[AccentColorMap[props.accent]];
+  switch (buttonVariant) {
+    case ButtonVariantTypes.SECONDARY:
+      return backgroundColor
+        ? tinycolor(backgroundColor)
+            .lighten(40)
+            .toString()
+        : theme.colors.button.primary.secondary.hoverColor;
+
+    case ButtonVariantTypes.TERTIARY:
+      return backgroundColor
+        ? tinycolor(backgroundColor)
+            .lighten(40)
+            .toString()
+        : theme.colors.button.primary.tertiary.hoverColor;
+
+    default:
+      return backgroundColor
+        ? tinycolor(backgroundColor)
+            .darken(10)
+            .toString()
+        : theme.colors.button.primary.primary.hoverColor;
   }
 };
 
-const ButtonColorStyles = css<ButtonStyleProps>`
-  color: ${getButtonColorStyles};
-  svg {
-    fill: ${getButtonColorStyles};
-  }
-`;
+const getCustomBackgroundColor = (
+  theme: Theme,
+  prevButtonStyle?: ButtonStyleType,
+  buttonVariant?: ButtonVariant,
+  backgroundColor?: string,
+) => {
+  return buttonVariant === ButtonVariantTypes.PRIMARY
+    ? backgroundColor
+      ? backgroundColor
+      : theme.colors.button[
+          (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
+        ].primary.bgColor
+    : "none";
+};
 
-const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
-  <Button {...omit(props, ["accent", "filled"])} />
-))<ButtonStyleProps>`
-  &&&& {
-    ${ButtonColorStyles};
-    width: 100%;
-    height: 100%;
-    transition: background-color 0.2s;
-    background-color: ${(props) =>
-      props.filled &&
-      props.accent &&
-      props.theme.colors[AccentColorMap[props.accent]]};
-    border: 1px solid
-      ${(props) =>
-        props.accent
-          ? props.theme.colors[AccentColorMap[props.accent]]
-          : props.theme.colors.primary};
-    border-radius: 0;
-    font-weight: ${(props) => props.theme.fontWeights[2]};
-    outline: none;
-    &.bp3-button {
-      padding: 0px 10px;
+const getCustomBorderColor = (
+  theme: Theme,
+  prevButtonStyle?: ButtonStyleType,
+  buttonVariant?: ButtonVariant,
+  backgroundColor?: string,
+) => {
+  return buttonVariant === ButtonVariantTypes.SECONDARY
+    ? backgroundColor
+      ? backgroundColor
+      : theme.colors.button[
+          (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
+        ].secondary.borderColor
+    : "none";
+};
+
+const StyledButton = styled((props) => (
+  <Button
+    {..._.omit(props, [
+      "prevButtonStyle",
+      "borderRadius",
+      "boxShadow",
+      "boxShadowColor",
+      "buttonColor",
+      "buttonStyle",
+      "buttonVariant",
+    ])}
+  />
+))<ThemeProp & ButtonStyleProps>`
+  height: 100%;
+  background-image: none !important;
+  font-weight: ${(props) => props.theme.fontWeights[2]};
+  outline: none;
+  padding: 0px 10px;
+
+  ${({ buttonColor, buttonStyle, buttonVariant, prevButtonStyle, theme }) => `
+    &:enabled {
+      background: ${
+        buttonStyle === ButtonStyleTypes.WARNING
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.warning.primary.bgColor
+            : "none"
+          : buttonStyle === ButtonStyleTypes.DANGER
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.danger.primary.bgColor
+            : "none"
+          : buttonStyle === ButtonStyleTypes.INFO
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.info.primary.bgColor
+            : "none"
+          : buttonStyle === ButtonStyleTypes.SECONDARY
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.secondary.primary.bgColor
+            : "none"
+          : buttonStyle === ButtonStyleTypes.CUSTOM
+          ? getCustomBackgroundColor(
+              theme,
+              prevButtonStyle,
+              buttonVariant,
+              buttonColor,
+            )
+          : buttonVariant === ButtonVariantTypes.PRIMARY
+          ? theme.colors.button.primary.primary.bgColor
+          : "none"
+      } !important;
     }
-    && .bp3-button-text {
+
+    &:hover:enabled, &:active:enabled {
+      background: ${
+        buttonStyle === ButtonStyleTypes.WARNING
+          ? buttonVariant === ButtonVariantTypes.SECONDARY
+            ? theme.colors.button.warning.secondary.hoverColor
+            : buttonVariant === ButtonVariantTypes.TERTIARY
+            ? theme.colors.button.warning.tertiary.hoverColor
+            : theme.colors.button.warning.primary.hoverColor
+          : buttonStyle === ButtonStyleTypes.DANGER
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.danger.primary.hoverColor
+            : theme.colors.button.danger.secondary.hoverColor
+          : buttonStyle === ButtonStyleTypes.INFO
+          ? buttonVariant === ButtonVariantTypes.PRIMARY
+            ? theme.colors.button.info.primary.hoverColor
+            : theme.colors.button.info.secondary.hoverColor
+          : buttonStyle === ButtonStyleTypes.SECONDARY
+          ? buttonVariant === ButtonVariantTypes.SECONDARY
+            ? theme.colors.button.secondary.secondary.hoverColor
+            : buttonVariant === ButtonVariantTypes.TERTIARY
+            ? theme.colors.button.secondary.tertiary.hoverColor
+            : theme.colors.button.secondary.primary.hoverColor
+          : buttonStyle === ButtonStyleTypes.CUSTOM
+          ? getCustomHoverColor(
+              theme,
+              prevButtonStyle,
+              buttonVariant,
+              buttonColor,
+            )
+          : buttonVariant === ButtonVariantTypes.SECONDARY
+          ? theme.colors.button.primary.secondary.hoverColor
+          : buttonVariant === ButtonVariantTypes.TERTIARY
+          ? theme.colors.button.primary.tertiary.hoverColor
+          : theme.colors.button.primary.primary.hoverColor
+      } !important;
+    }
+
+    &:disabled {
+      background-color: ${theme.colors.button.disabled.bgColor} !important;
+      color: ${theme.colors.button.disabled.textColor} !important;
+    }
+
+    border: ${
+      buttonVariant === ButtonVariantTypes.SECONDARY
+        ? buttonStyle === ButtonStyleTypes.WARNING
+          ? `1px solid ${theme.colors.button.warning.secondary.borderColor}`
+          : buttonStyle === ButtonStyleTypes.DANGER
+          ? `1px solid ${theme.colors.button.danger.secondary.borderColor}`
+          : buttonStyle === ButtonStyleTypes.INFO
+          ? `1px solid ${theme.colors.button.info.secondary.borderColor}`
+          : buttonStyle === ButtonStyleTypes.SECONDARY
+          ? `1px solid ${theme.colors.button.secondary.secondary.borderColor}`
+          : buttonStyle === ButtonStyleTypes.CUSTOM
+          ? `1px solid ${getCustomBorderColor(
+              theme,
+              prevButtonStyle,
+              buttonVariant,
+              buttonColor,
+            )}`
+          : `1px solid ${theme.colors.button.primary.secondary.borderColor}`
+        : "none"
+    } !important;
+
+    & > span {
+      max-height: 100%;
       max-width: 99%;
       text-overflow: ellipsis;
       overflow: hidden;
@@ -67,48 +226,135 @@ const ButtonWrapper = styled((props: ButtonStyleProps & IButtonProps) => (
       -webkit-line-clamp: 1;
       -webkit-box-orient: vertical;
 
-      max-height: 100%;
-      overflow: hidden;
+      color: ${
+        buttonVariant === ButtonVariantTypes.PRIMARY
+          ? buttonStyle === ButtonStyleTypes.CUSTOM
+            ? getCustomTextColor(theme, buttonColor, prevButtonStyle)
+            : `${theme.colors.button.primary.primary.textColor}`
+          : buttonStyle === ButtonStyleTypes.WARNING
+          ? `${theme.colors.button.warning.secondary.textColor}`
+          : buttonStyle === ButtonStyleTypes.DANGER
+          ? `${theme.colors.button.danger.secondary.textColor}`
+          : buttonStyle === ButtonStyleTypes.INFO
+          ? `${theme.colors.button.info.secondary.textColor}`
+          : buttonStyle === ButtonStyleTypes.SECONDARY
+          ? `${theme.colors.button.secondary.secondary.textColor}`
+          : buttonStyle === ButtonStyleTypes.CUSTOM
+          ? getCustomBackgroundColor(
+              theme,
+              prevButtonStyle,
+              ButtonVariantTypes.PRIMARY,
+              buttonColor,
+            )
+          : `${theme.colors.button.primary.secondary.textColor}`
+      } !important;
     }
-    &&:hover,
-    &&:focus {
-      ${ButtonColorStyles};
-      background-color: ${(props) => {
-        if (!props.filled) return props.theme.colors.secondaryDarker;
-        if (props.accent !== "secondary" && props.accent) {
-          return darkenHover(props.theme.colors[AccentColorMap[props.accent]]);
-        }
-      }};
-      border-color: ${(props) => {
-        if (!props.filled) return;
-        if (props.accent !== "secondary" && props.accent) {
-          return darkenHover(props.theme.colors[AccentColorMap[props.accent]]);
-        }
-      }};
-    }
-    &&:active {
-      ${ButtonColorStyles};
-      background-color: ${(props) => {
-        if (!props.filled) return props.theme.colors.secondaryDarkest;
-        if (props.accent !== "secondary" && props.accent) {
-          return darkenActive(props.theme.colors[AccentColorMap[props.accent]]);
-        }
-      }};
-      border-color: ${(props) => {
-        if (!props.filled) return;
-        if (props.accent !== "secondary" && props.accent) {
-          return darkenActive(props.theme.colors[AccentColorMap[props.accent]]);
-        }
-      }};
-    }
-    &&.bp3-disabled {
-      background-color: #d0d7dd;
-      border: none;
-    }
-  }
+  `}
+
+  border-radius: ${({ borderRadius }) =>
+    borderRadius === ButtonBorderRadiusTypes.ROUNDED ? "5px" : 0};
+
+  box-shadow: ${({ boxShadow, boxShadowColor, theme }) =>
+    boxShadow === ButtonBoxShadowTypes.VARIANT1
+      ? `0px 0px 4px 3px ${boxShadowColor ||
+          theme.colors.button.boxShadow.default.variant1}`
+      : boxShadow === ButtonBoxShadowTypes.VARIANT2
+      ? `3px 3px 4px ${boxShadowColor ||
+          theme.colors.button.boxShadow.default.variant2}`
+      : boxShadow === ButtonBoxShadowTypes.VARIANT3
+      ? `0px 1px 3px ${boxShadowColor ||
+          theme.colors.button.boxShadow.default.variant3}`
+      : boxShadow === ButtonBoxShadowTypes.VARIANT4
+      ? `2px 2px 0px ${boxShadowColor ||
+          theme.colors.button.boxShadow.default.variant4}`
+      : boxShadow === ButtonBoxShadowTypes.VARIANT5
+      ? `-2px -2px 0px ${boxShadowColor ||
+          theme.colors.button.boxShadow.default.variant5}`
+      : "none"} !important;
 `;
+
+type ButtonStyleProps = {
+  buttonColor?: string;
+  buttonStyle?: ButtonStyleType;
+  prevButtonStyle?: ButtonStyleType;
+  buttonVariant?: ButtonVariant;
+  boxShadow?: ButtonBoxShadow;
+  boxShadowColor?: string;
+  borderRadius?: ButtonBorderRadius;
+  iconName?: IconName;
+  iconAlign?: Alignment;
+};
 
 // To be used in any other part of the app
 export function BaseButton(props: IButtonProps & ButtonStyleProps) {
-  return <ButtonWrapper {...props} />;
+  const {
+    borderRadius,
+    boxShadow,
+    boxShadowColor,
+    buttonColor,
+    buttonStyle,
+    buttonVariant,
+    className,
+    disabled,
+    icon,
+    iconAlign,
+    iconName,
+    loading,
+    onClick,
+    prevButtonStyle,
+    rightIcon,
+    text,
+  } = props;
+
+  if (iconAlign === Alignment.RIGHT) {
+    return (
+      <StyledButton
+        alignText={iconName ? Alignment.LEFT : Alignment.CENTER}
+        borderRadius={borderRadius}
+        boxShadow={boxShadow}
+        boxShadowColor={boxShadowColor}
+        buttonColor={buttonColor}
+        buttonStyle={buttonStyle}
+        buttonVariant={buttonVariant}
+        className={className}
+        disabled={disabled}
+        fill
+        icon={icon}
+        loading={loading}
+        onClick={onClick}
+        prevButtonStyle={prevButtonStyle}
+        rightIcon={iconName || rightIcon}
+        text={text}
+      />
+    );
+  }
+
+  return (
+    <StyledButton
+      alignText={iconName ? Alignment.RIGHT : Alignment.CENTER}
+      borderRadius={borderRadius}
+      boxShadow={boxShadow}
+      boxShadowColor={boxShadowColor}
+      buttonColor={buttonColor}
+      buttonStyle={buttonStyle}
+      buttonVariant={buttonVariant}
+      className={className}
+      disabled={disabled}
+      fill
+      icon={iconName || icon}
+      loading={loading}
+      onClick={onClick}
+      prevButtonStyle={prevButtonStyle}
+      rightIcon={rightIcon}
+      text={text}
+    />
+  );
 }
+
+BaseButton.defaultProps = {
+  buttonStyle: "SECONDARY",
+  buttonVariant: ButtonVariantTypes.PRIMARY,
+  disabled: false,
+  text: "Button Text",
+  minimal: true,
+};

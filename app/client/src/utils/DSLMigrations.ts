@@ -21,7 +21,10 @@ import {
   tableWidgetPropertyPaneMigrations,
   migrateTablePrimaryColumnsComputedValue,
   migrateTableWidgetDelimiterProperties,
+  migrateTableWidgetSelectedRowBindings,
   migrateTableSanitizeColumnKeys,
+  isSortableMigration,
+  migrateTableWidgetIconButtonVariant,
 } from "./migrations/TableWidget";
 import { migrateTextStyleFromTextWidget } from "./migrations/TextWidgetReplaceTextStyle";
 import { DATA_BIND_REGEX_GLOBAL } from "constants/BindingsConstants";
@@ -34,6 +37,11 @@ import defaultTemplate from "templates/default";
 import { renameKeyInObject } from "./helpers";
 import { ColumnProperties } from "widgets/TableWidget/component/Constants";
 import { migrateMenuButtonWidgetButtonProperties } from "./migrations/MenuButtonWidget";
+import { ButtonStyleTypes, ButtonVariantTypes } from "../components/constants";
+import { Colors } from "../constants/Colors";
+import { migrateResizableModalWidgetProperties } from "./migrations/ModalWidget";
+import { migrateMapWidgetIsClickedMarkerCentered } from "./migrations/MapWidget";
+import { DSLWidget } from "widgets/constants";
 
 /**
  * adds logBlackList key for all list widget children
@@ -284,6 +292,24 @@ const mapDataMigration = (currentDSL: ContainerWidgetProps<WidgetProps>) => {
     }
     return children;
   });
+  return currentDSL;
+};
+
+const mapAllowHorizontalScrollMigration = (
+  currentDSL: ContainerWidgetProps<WidgetProps>,
+) => {
+  currentDSL.children = currentDSL.children?.map((child: DSLWidget) => {
+    if (child.type === "CHART_WIDGET") {
+      child.allowScroll = child.allowHorizontalScroll;
+      delete child.allowHorizontalScroll;
+    }
+
+    if (Array.isArray(child.children) && child.children.length > 0)
+      child = mapAllowHorizontalScrollMigration(child);
+
+    return child;
+  });
+
   return currentDSL;
 };
 
@@ -699,13 +725,17 @@ export const migrateInitialValues = (
 
 // A rudimentary transform function which updates the DSL based on its version.
 // A more modular approach needs to be designed.
-export const transformDSL = (currentDSL: ContainerWidgetProps<WidgetProps>) => {
+export const transformDSL = (
+  currentDSL: ContainerWidgetProps<WidgetProps>,
+  newPage = false,
+) => {
   if (currentDSL.version === undefined) {
     // Since this top level widget is a CANVAS_WIDGET,
     // DropTargetComponent needs to know the minimum height the canvas can take
     // See DropTargetUtils.ts
     currentDSL.minHeight = calculateDynamicHeight();
-
+    currentDSL.bottomRow =
+      currentDSL.minHeight - GridDefaults.DEFAULT_GRID_ROW_HEIGHT;
     // For the first time the DSL is created, remove one row from the total possible rows
     // to adjust for padding and margins.
     currentDSL.snapRows =
@@ -714,14 +744,14 @@ export const transformDSL = (currentDSL: ContainerWidgetProps<WidgetProps>) => {
 
     // Force the width of the canvas to 1224 px
     currentDSL.rightColumn = 1224;
-    // The canvas is a CANVAS_WIDGET whichdoesn't have a background or borders by default
+    // The canvas is a CANVAS_WIDGET which doesn't have a background or borders by default
     currentDSL.backgroundColor = "none";
     currentDSL.containerStyle = "none";
     currentDSL.type = "CANVAS_WIDGET";
     currentDSL.detachFromLayout = true;
     currentDSL.canExtend = true;
 
-    // Update version to make sure this doesn't run everytime.
+    // Update version to make sure this doesn't run every time.
     currentDSL.version = 1;
   }
 
@@ -817,7 +847,9 @@ export const transformDSL = (currentDSL: ContainerWidgetProps<WidgetProps>) => {
       currentDSL.bottomRow,
       currentDSL.detachFromLayout || false,
     );
-    currentDSL = migrateToNewLayout(currentDSL);
+    if (!newPage) {
+      currentDSL = migrateToNewLayout(currentDSL);
+    }
     currentDSL.version = 20;
   }
 
@@ -913,9 +945,104 @@ export const transformDSL = (currentDSL: ContainerWidgetProps<WidgetProps>) => {
 
   if (currentDSL.version === 37) {
     currentDSL = migrateTableSanitizeColumnKeys(currentDSL);
+    currentDSL.version = 38;
+  }
+
+  if (currentDSL.version === 38) {
+    currentDSL = migrateResizableModalWidgetProperties(currentDSL);
+    currentDSL.version = 39;
+  }
+
+  if (currentDSL.version === 39) {
+    currentDSL = migrateTableWidgetSelectedRowBindings(currentDSL);
+    currentDSL.version = 40;
+  }
+
+  if (currentDSL.version === 40) {
+    currentDSL = revertButtonStyleToButtonColor(currentDSL);
+    currentDSL.version = 41;
+  }
+
+  if (currentDSL.version === 41) {
+    currentDSL = migrateButtonVariant(currentDSL);
+    currentDSL.version = 42;
+  }
+
+  if (currentDSL.version === 42) {
+    currentDSL = migrateMapWidgetIsClickedMarkerCentered(currentDSL);
+    currentDSL.version = 43;
+  }
+
+  if (currentDSL.version === 43) {
+    currentDSL = mapAllowHorizontalScrollMigration(currentDSL);
+    currentDSL.version = 44;
+  }
+  if (currentDSL.version === 44) {
+    currentDSL = isSortableMigration(currentDSL);
+    currentDSL.version = 45;
+  }
+  if (currentDSL.version === 45) {
+    currentDSL = migrateTableWidgetIconButtonVariant(currentDSL);
     currentDSL.version = LATEST_PAGE_VERSION;
   }
 
+  return currentDSL;
+};
+
+const migrateButtonVariant = (
+  currentDSL: ContainerWidgetProps<WidgetProps>,
+) => {
+  if (
+    currentDSL.type === "BUTTON_WIDGET" ||
+    currentDSL.type === "FORM_BUTTON_WIDGET" ||
+    currentDSL.type === "ICON_BUTTON_WIDGET"
+  ) {
+    switch (currentDSL.buttonVariant) {
+      case "OUTLINE":
+        currentDSL.buttonVariant = ButtonVariantTypes.SECONDARY;
+        break;
+      case "GHOST":
+        currentDSL.buttonVariant = ButtonVariantTypes.TERTIARY;
+        break;
+      default:
+        currentDSL.buttonVariant = ButtonVariantTypes.PRIMARY;
+    }
+  }
+  if (currentDSL.type === "MENU_BUTTON_WIDGET") {
+    switch (currentDSL.menuVariant) {
+      case "OUTLINE":
+        currentDSL.menuVariant = ButtonVariantTypes.SECONDARY;
+        break;
+      case "GHOST":
+        currentDSL.menuVariant = ButtonVariantTypes.TERTIARY;
+        break;
+      default:
+        currentDSL.menuVariant = ButtonVariantTypes.PRIMARY;
+    }
+  }
+  if (currentDSL.type === "TABLE_WIDGET") {
+    if (currentDSL.hasOwnProperty("primaryColumns")) {
+      Object.keys(currentDSL.primaryColumns).forEach((column) => {
+        if (currentDSL.primaryColumns[column].columnType === "iconButton") {
+          let newVariant = ButtonVariantTypes.PRIMARY;
+          switch (currentDSL.primaryColumns[column].buttonVariant) {
+            case "OUTLINE":
+              newVariant = ButtonVariantTypes.SECONDARY;
+              break;
+            case "GHOST":
+              newVariant = ButtonVariantTypes.TERTIARY;
+              break;
+          }
+          currentDSL.primaryColumns[column].buttonVariant = newVariant;
+        }
+      });
+    }
+  }
+  if (currentDSL.children && currentDSL.children.length) {
+    currentDSL.children = currentDSL.children.map((child) =>
+      migrateButtonVariant(child),
+    );
+  }
   return currentDSL;
 };
 
@@ -931,6 +1058,93 @@ export const revertTableDefaultSelectedRow = (
   if (currentDSL.children && currentDSL.children.length) {
     currentDSL.children = currentDSL.children.map((child) =>
       revertTableDefaultSelectedRow(child),
+    );
+  }
+  return currentDSL;
+};
+
+export const revertButtonStyleToButtonColor = (
+  currentDSL: ContainerWidgetProps<WidgetProps>,
+) => {
+  if (
+    currentDSL.type === "BUTTON_WIDGET" ||
+    currentDSL.type === "FORM_BUTTON_WIDGET" ||
+    currentDSL.type === "ICON_BUTTON_WIDGET"
+  ) {
+    if (currentDSL.hasOwnProperty("buttonStyle")) {
+      switch (currentDSL.buttonStyle) {
+        case ButtonStyleTypes.DANGER:
+          currentDSL.buttonColor = Colors.DANGER_SOLID;
+          break;
+        case ButtonStyleTypes.PRIMARY:
+          currentDSL.buttonColor = Colors.GREEN;
+          break;
+        case ButtonStyleTypes.WARNING:
+          currentDSL.buttonColor = Colors.WARNING_SOLID;
+          break;
+        case ButtonStyleTypes.INFO:
+          currentDSL.buttonColor = Colors.INFO_SOLID;
+          break;
+        case ButtonStyleTypes.SECONDARY:
+          currentDSL.buttonColor = Colors.GRAY;
+          break;
+        case "PRIMARY_BUTTON":
+          currentDSL.buttonColor = Colors.GREEN;
+          break;
+        case "SECONDARY_BUTTON":
+          currentDSL.buttonColor = Colors.GREEN;
+          currentDSL.buttonVariant = ButtonVariantTypes.SECONDARY;
+          break;
+        case "DANGER_BUTTON":
+          currentDSL.buttonColor = Colors.DANGER_SOLID;
+          break;
+        default:
+          if (!currentDSL.buttonColor) currentDSL.buttonColor = Colors.GREEN;
+          break;
+      }
+      delete currentDSL.buttonStyle;
+    }
+  }
+  if (currentDSL.type === "MENU_BUTTON_WIDGET") {
+    if (currentDSL.hasOwnProperty("menuStyle")) {
+      switch (currentDSL.menuStyle) {
+        case ButtonStyleTypes.DANGER:
+          currentDSL.menuColor = Colors.DANGER_SOLID;
+          break;
+        case ButtonStyleTypes.PRIMARY:
+          currentDSL.menuColor = Colors.GREEN;
+          break;
+        case ButtonStyleTypes.WARNING:
+          currentDSL.menuColor = Colors.WARNING_SOLID;
+          break;
+        case ButtonStyleTypes.INFO:
+          currentDSL.menuColor = Colors.INFO_SOLID;
+          break;
+        case ButtonStyleTypes.SECONDARY:
+          currentDSL.menuColor = Colors.GRAY;
+          break;
+        default:
+          if (!currentDSL.menuColor) currentDSL.menuColor = Colors.GREEN;
+          break;
+      }
+      delete currentDSL.menuStyle;
+      delete currentDSL.prevMenuStyle;
+    }
+  }
+  if (currentDSL.type === "TABLE_WIDGET") {
+    if (currentDSL.hasOwnProperty("primaryColumns")) {
+      Object.keys(currentDSL.primaryColumns).forEach((column) => {
+        if (currentDSL.primaryColumns[column].columnType === "button") {
+          currentDSL.primaryColumns[column].buttonColor =
+            currentDSL.primaryColumns[column].buttonStyle;
+          delete currentDSL.primaryColumns[column].buttonStyle;
+        }
+      });
+    }
+  }
+  if (currentDSL.children && currentDSL.children.length) {
+    currentDSL.children = currentDSL.children.map((child) =>
+      revertButtonStyleToButtonColor(child),
     );
   }
   return currentDSL;

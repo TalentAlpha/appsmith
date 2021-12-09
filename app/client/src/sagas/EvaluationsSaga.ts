@@ -5,11 +5,14 @@ import {
   put,
   select,
   take,
+  all,
+  delay,
 } from "redux-saga/effects";
 
 import {
   EvaluationReduxAction,
   ReduxAction,
+  ReduxActionType,
   ReduxActionTypes,
   ReduxActionWithoutPayload,
 } from "constants/ReduxActionConstants";
@@ -17,6 +20,7 @@ import {
   getDataTree,
   getUnevaluatedDataTree,
 } from "selectors/dataTreeSelectors";
+import { getWidgets } from "sagas/selectors";
 import WidgetFactory, { WidgetTypeConfigMap } from "../utils/WidgetFactory";
 import { GracefulWorkerService } from "utils/WorkerUtil";
 import Worker from "worker-loader!../workers/evaluation.worker";
@@ -44,9 +48,10 @@ import {
   postEvalActionDispatcher,
   updateTernDefinitions,
 } from "./PostEvaluationSagas";
-import { JSCollection, JSAction } from "entities/JSCollection";
+import { JSAction } from "entities/JSCollection";
 import { getAppMode } from "selectors/applicationSelectors";
 import { APP_MODE } from "entities/App";
+import { get, isUndefined } from "lodash";
 import {
   setEvaluatedArgument,
   setEvaluatedSnippet,
@@ -63,6 +68,11 @@ import {
 } from "constants/messages";
 import { validate } from "workers/validations";
 import { diff } from "deep-diff";
+import { REPLAY_DELAY } from "entities/Replay/replayUtils";
+import { EvaluationVersion } from "api/ApplicationApi";
+import { makeUpdateJSCollection } from "sagas/JSPaneSagas";
+import { ENTITY_TYPE } from "entities/AppsmithConsole";
+import { Replayable } from "entities/Replay/ReplayEntity/ReplayEditor";
 
 let widgetTypeConfigMap: WidgetTypeConfigMap;
 
@@ -70,8 +80,10 @@ const worker = new GracefulWorkerService(Worker);
 
 function* evaluateTreeSaga(
   postEvalActions?: Array<ReduxAction<unknown> | ReduxActionWithoutPayload>,
+  shouldReplay?: boolean,
 ) {
   const unevalTree = yield select(getUnevaluatedDataTree);
+  const widgets = yield select(getWidgets);
   log.debug({ unevalTree });
   PerformanceTracker.startAsyncTracking(
     PerformanceTransactionName.DATA_TREE_EVALUATION,
@@ -82,6 +94,8 @@ function* evaluateTreeSaga(
     {
       unevalTree,
       widgetTypeConfigMap,
+      widgets,
+      shouldReplay,
     },
   );
   const {
@@ -89,6 +103,7 @@ function* evaluateTreeSaga(
     dependencies,
     errors,
     evaluationOrder,
+    jsUpdates,
     logs,
     unEvalUpdates,
   } = workerResponse;
@@ -108,12 +123,13 @@ function* evaluateTreeSaga(
   );
 
   const updatedDataTree = yield select(getDataTree);
-
+  log.debug({ jsUpdates: jsUpdates });
   log.debug({ dataTree: updatedDataTree });
-  logs.forEach((evalLog: any) => log.debug(evalLog));
+  logs?.forEach((evalLog: any) => log.debug(evalLog));
   yield call(evalErrorHandler, errors, updatedDataTree, evaluationOrder);
   const appMode = yield select(getAppMode);
   if (appMode !== APP_MODE.PUBLISHED) {
+    yield call(makeUpdateJSCollection, jsUpdates);
     yield fork(
       logSuccessfulBindings,
       unevalTree,
@@ -162,7 +178,9 @@ export function* evaluateDynamicTrigger(
   );
 
   const { errors, triggers } = workerResponse;
+
   yield call(evalErrorHandler, errors);
+
   return triggers;
 }
 
@@ -176,18 +194,6 @@ export function* clearEvalPropertyCache(propertyPath: string) {
   yield call(worker.request, EVAL_WORKER_ACTIONS.CLEAR_PROPERTY_CACHE, {
     propertyPath,
   });
-}
-
-export function* parseJSCollection(body: string, jsAction: JSCollection) {
-  const parsedObject = yield call(
-    worker.request,
-    EVAL_WORKER_ACTIONS.PARSE_JS_FUNCTION_BODY,
-    {
-      body,
-      jsAction,
-    },
-  );
-  return parsedObject;
 }
 
 export function* executeFunction(collectionName: string, action: JSAction) {
@@ -280,6 +286,7 @@ function* evaluationChangeListenerSaga() {
   // Explicitly shutdown old worker if present
   yield call(worker.shutdown);
   yield call(worker.start);
+  yield call(worker.request, EVAL_WORKER_ACTIONS.SETUP);
   widgetTypeConfigMap = WidgetFactory.getWidgetTypeConfigMap();
   const initAction = yield take(FIRST_EVAL_REDUX_ACTIONS);
   yield fork(evaluateTreeSaga, initAction.postEvalActions);
@@ -292,7 +299,11 @@ function* evaluationChangeListenerSaga() {
       evtActionChannel,
     );
     if (shouldProcessBatchedAction(action)) {
-      yield call(evaluateTreeSaga, action.postEvalActions);
+      yield call(
+        evaluateTreeSaga,
+        action.postEvalActions,
+        get(action, "payload.shouldReplay"),
+      );
     }
   }
 }
@@ -304,40 +315,49 @@ export function* evaluateSnippetSaga(action: any) {
     if (isTrigger) {
       expression = `function() { ${expression} }`;
     }
-    const workerResponse = yield call(
-      worker.request,
-      EVAL_WORKER_ACTIONS.EVAL_EXPRESSION,
-      {
-        expression,
-        dataType,
-        isTrigger,
-      },
-    );
+    const workerResponse: {
+      errors: any;
+      result: any;
+      triggers: any;
+    } = yield call(worker.request, EVAL_WORKER_ACTIONS.EVAL_EXPRESSION, {
+      expression,
+      dataType,
+      isTrigger,
+    });
     const { errors, result, triggers } = workerResponse;
     if (triggers && triggers.length > 0) {
-      yield call(
-        executeActionTriggers,
-        triggers[0],
-        EventType.ON_SNIPPET_EXECUTE,
+      yield all(
+        triggers.map((trigger: any) =>
+          call(
+            executeActionTriggers,
+            trigger,
+            EventType.ON_SNIPPET_EXECUTE,
+            {},
+          ),
+        ),
       );
+      //Result is when trigger is present. Following code will hide the evaluated snippet section
+      yield put(setEvaluatedSnippet(result));
     } else {
+      /*
+        JSON.stringify(undefined) is undefined.
+        We need to set it manually to "undefined" for codeEditor to display it.
+      */
       yield put(
         setEvaluatedSnippet(
-          result
-            ? JSON.stringify(result, null, 2)
-            : errors && errors.length
+          errors?.length
             ? JSON.stringify(errors, null, 2)
-            : "",
+            : isUndefined(result)
+            ? "undefined"
+            : JSON.stringify(result),
         ),
       );
     }
     Toaster.show({
       text: createMessage(
-        result || triggers
-          ? SNIPPET_EXECUTION_SUCCESS
-          : SNIPPET_EXECUTION_FAILED,
+        errors?.length ? SNIPPET_EXECUTION_FAILED : SNIPPET_EXECUTION_SUCCESS,
       ),
-      variant: result || triggers ? Variant.success : Variant.danger,
+      variant: errors?.length ? Variant.danger : Variant.success,
     });
     yield put(
       setGlobalSearchFilterContext({
@@ -350,6 +370,10 @@ export function* evaluateSnippetSaga(action: any) {
         executionInProgress: false,
       }),
     );
+    Toaster.show({
+      text: createMessage(SNIPPET_EXECUTION_FAILED),
+      variant: Variant.danger,
+    });
     log.error(e);
     Sentry.captureException(e);
   }
@@ -371,12 +395,14 @@ export function* evaluateArgumentSaga(action: any) {
     if (workerResponse.result) {
       const validation = validate({ type }, workerResponse.result, {});
       if (!validation.isValid)
-        lintErrors.unshift({
-          ...validation,
-          ...{
-            errorType: PropertyEvaluationErrorType.VALIDATION,
-            errorMessage: validation.message,
-          },
+        validation.messages?.map((message) => {
+          lintErrors.unshift({
+            ...validation,
+            ...{
+              errorType: PropertyEvaluationErrorType.VALIDATION,
+              errorMessage: message,
+            },
+          });
         });
     }
     yield put(
@@ -394,6 +420,45 @@ export function* evaluateArgumentSaga(action: any) {
     log.error(e);
     Sentry.captureException(e);
   }
+}
+
+export function* updateReplayEntitySaga(
+  actionPayload: ReduxAction<{
+    entityId: string;
+    entity: Replayable;
+    entityType: ENTITY_TYPE;
+  }>,
+) {
+  //Delay updates to replay object to not persist every keystroke
+  yield delay(REPLAY_DELAY);
+  const { entity, entityId, entityType } = actionPayload.payload;
+  const workerResponse = yield call(
+    worker.request,
+    EVAL_WORKER_ACTIONS.UPDATE_REPLAY_OBJECT,
+    {
+      entityId,
+      entity,
+      entityType,
+    },
+  );
+  return workerResponse;
+}
+
+export function* workerComputeUndoRedo(operation: string, entityId: string) {
+  const workerResponse: any = yield call(worker.request, operation, {
+    entityId,
+  });
+  return workerResponse;
+}
+
+export function* setAppVersionOnWorkerSaga(action: {
+  type: ReduxActionType;
+  payload: EvaluationVersion;
+}) {
+  const version: EvaluationVersion = action.payload;
+  yield call(worker.request, EVAL_WORKER_ACTIONS.SET_EVALUATION_VERSION, {
+    version,
+  });
 }
 
 export default function* evaluationSagaListeners() {

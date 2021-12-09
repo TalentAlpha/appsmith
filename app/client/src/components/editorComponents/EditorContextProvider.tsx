@@ -13,8 +13,7 @@ import {
 } from "actions/controlActions";
 
 import { ExecuteTriggerPayload } from "constants/AppsmithActionConstants/ActionConstants";
-import { RenderModes } from "constants/WidgetConstants";
-import { OccupiedSpace } from "constants/editorConstants";
+import { OccupiedSpace } from "constants/CanvasEditorConstants";
 
 import {
   resetChildrenMetaProperty,
@@ -102,13 +101,7 @@ const mapDispatchToProps = {
     widgetId: string,
     propertyName: string,
     propertyValue: any,
-  ) =>
-    updateWidgetPropertyRequest(
-      widgetId,
-      propertyName,
-      propertyValue,
-      RenderModes.CANVAS,
-    ),
+  ) => updateWidgetPropertyRequest(widgetId, propertyName, propertyValue),
 
   executeAction: executeTrigger,
   updateWidget,

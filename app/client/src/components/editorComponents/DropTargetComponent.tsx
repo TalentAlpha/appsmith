@@ -45,22 +45,11 @@ const StyledDropTarget = styled.div`
   z-index: 1;
 `;
 
-const StyledOnboardingWrapper = styled.div`
-  position: fixed;
-  left: 50%;
-  top: 50vh;
-`;
-const StyledOnboardingMessage = styled.h2`
-  color: #ccc;
-`;
-
 function Onboarding() {
   return (
-    <StyledOnboardingWrapper>
-      <StyledOnboardingMessage>
-        Drag and drop a widget here
-      </StyledOnboardingMessage>
-    </StyledOnboardingWrapper>
+    <h2 className="absolute top-0 left-0 right-0 flex items-end h-108 justify-center text-2xl font-bold text-gray-300">
+      Drag and drop a widget here
+    </h2>
   );
 }
 
@@ -73,7 +62,6 @@ export const DropTargetContext: Context<{
     widgetId: string,
     widgetBottomRow: number,
   ) => number | false;
-  persistDropTargetRows?: (widgetId: string, row: number) => void;
 }> = createContext({});
 
 export function DropTargetComponent(props: DropTargetComponentProps) {
@@ -124,24 +112,6 @@ export function DropTargetComponent(props: DropTargetComponentProps) {
     }
   }, [props.bottomRow, props.canExtend]);
 
-  const persistDropTargetRows = (widgetId: string, widgetBottomRow: number) => {
-    const newRows = calculateDropTargetRows(
-      widgetId,
-      widgetBottomRow,
-      props.minHeight / GridDefaults.DEFAULT_GRID_ROW_HEIGHT - 1,
-      occupiedSpacesByChildren,
-    );
-    const rowsToPersist = Math.max(
-      props.minHeight / GridDefaults.DEFAULT_GRID_ROW_HEIGHT - 1,
-      newRows,
-    );
-    rowRef.current = rowsToPersist;
-    updateHeight();
-    if (canDropTargetExtend) {
-      updateCanvasSnapRows(props.widgetId, rowsToPersist);
-    }
-  };
-
   const updateHeight = () => {
     if (dropTargetRef.current) {
       const height = canDropTargetExtend
@@ -185,7 +155,7 @@ export function DropTargetComponent(props: DropTargetComponentProps) {
     : "100%";
   const boxShadow =
     (isResizing || isDragging) && props.widgetId === MAIN_CONTAINER_WIDGET_ID
-      ? "0px 0px 0px 1px #DDDDDD"
+      ? "inset 0px 0px 0px 1px #DDDDDD"
       : "0px 0px 0px 1px transparent";
   const dropTargetRef = useRef<HTMLDivElement>(null);
 
@@ -193,9 +163,8 @@ export function DropTargetComponent(props: DropTargetComponentProps) {
   const contextValue = useMemo(() => {
     return {
       updateDropTargetRows,
-      persistDropTargetRows,
     };
-  }, [updateDropTargetRows, persistDropTargetRows, occupiedSpacesByChildren]);
+  }, [updateDropTargetRows, occupiedSpacesByChildren]);
 
   return (
     <DropTargetContext.Provider value={contextValue}>

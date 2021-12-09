@@ -35,12 +35,14 @@ import debuggerSagas from "./DebuggerSagas";
 import tourSagas from "./TourSagas";
 import notificationsSagas from "./NotificationsSagas";
 import selectionCanvasSagas from "./SelectionCanvasSagas";
+import replaySaga from "./ReplaySaga";
 import draggingCanvasSagas from "./DraggingCanvasSagas";
 import gitSyncSagas from "./GitSyncSagas";
 
 import log from "loglevel";
 import * as sentry from "@sentry/react";
 import formEvaluationChangeListener from "./FormEvaluationSaga";
+import SuperUserSagas from "./SuperUserSagas";
 const sagas = [
   initSagas,
   pageSagas,
@@ -79,8 +81,10 @@ const sagas = [
   tourSagas,
   notificationsSagas,
   selectionCanvasSagas,
+  replaySaga,
   draggingCanvasSagas,
   gitSyncSagas,
+  SuperUserSagas,
 ];
 
 export function* rootSaga(sagasToRun = sagas) {

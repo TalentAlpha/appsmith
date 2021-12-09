@@ -6,6 +6,8 @@ import { ItemListRenderer, ItemRenderer, Select } from "@blueprintjs/select";
 
 import BaseControl, { ControlProps } from "./BaseControl";
 import TooltipComponent from "components/ads/Tooltip";
+import { Colors } from "constants/Colors";
+import { replayHighlightClass } from "globalStyles/portals";
 
 const IconSelectContainerStyles = createGlobalStyle<{
   targetWidth: number | undefined;
@@ -21,8 +23,9 @@ const IconSelectContainerStyles = createGlobalStyle<{
 
 const StyledButton = styled(Button)`
   box-shadow: none !important;
-  border: none !important;
+  border: 1px solid ${Colors.GREY_5};
   border-radius: 0;
+  height: 36px;
   background-color: #ffffff !important;
   > span.bp3-icon-caret-down {
     color: rgb(169, 167, 167);
@@ -70,6 +73,7 @@ const StyledMenuItem = styled(MenuItem)`
 
 export interface IconSelectControlProps extends ControlProps {
   propertyValue?: IconName;
+  defaultIconName?: IconName;
 }
 
 export interface IconSelectControlState {
@@ -118,12 +122,13 @@ class IconSelectControl extends BaseControl<
   }
 
   public render() {
-    const { propertyValue: iconName } = this.props;
+    const { defaultIconName, propertyValue: iconName } = this.props;
     const { popoverTargetWidth } = this.state;
     return (
       <>
         <IconSelectContainerStyles targetWidth={popoverTargetWidth} />
         <TypedSelect
+          activeItem={iconName || defaultIconName || NONE}
           className="icon-select-container"
           itemListRenderer={this.renderMenu}
           itemPredicate={this.filterIconName}
@@ -135,12 +140,14 @@ class IconSelectControl extends BaseControl<
         >
           <StyledButton
             alignText={Alignment.LEFT}
-            className={Classes.TEXT_OVERFLOW_ELLIPSIS}
+            className={
+              Classes.TEXT_OVERFLOW_ELLIPSIS + " " + replayHighlightClass
+            }
             elementRef={this.iconSelectTargetRef}
             fill
-            icon={iconName}
+            icon={iconName || defaultIconName}
             rightIcon="caret-down"
-            text={iconName || NONE}
+            text={iconName || defaultIconName || NONE}
           />
         </TypedSelect>
       </>

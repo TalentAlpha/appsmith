@@ -1,51 +1,13 @@
 import React from "react";
-import { get, some, isEqual } from "lodash";
+import { get, some, isEqual, isNil } from "lodash";
 import { WidgetProps } from "../../BaseWidget";
 import { WidgetType } from "constants/WidgetConstants";
 import ContainerWidget, {
   ContainerWidgetProps,
 } from "widgets/ContainerWidget/widget";
 import { ContainerComponentProps } from "widgets/ContainerWidget/component";
-import { ValidationTypes } from "constants/WidgetValidation";
 
 class FormWidget extends ContainerWidget {
-  static getPropertyPaneConfig() {
-    return [
-      {
-        sectionName: "General",
-        children: [
-          {
-            propertyName: "backgroundColor",
-            label: "Background Color",
-            helpText: "Use a html color name, HEX, RGB or RGBA value",
-            placeholderText: "#FFFFFF / Gray / rgb(255, 99, 71)",
-            controlType: "COLOR_PICKER",
-            isBindProperty: true,
-            isJSConvertible: true,
-            isTriggerProperty: false,
-            validation: { type: ValidationTypes.TEXT },
-          },
-          {
-            helpText: "Controls the visibility of the widget",
-            propertyName: "isVisible",
-            label: "Visible",
-            controlType: "SWITCH",
-            isJSConvertible: true,
-            isBindProperty: true,
-            isTriggerProperty: false,
-            validation: { type: ValidationTypes.BOOLEAN },
-          },
-          {
-            propertyName: "shouldScrollContents",
-            label: "Scroll Contents",
-            controlType: "SWITCH",
-            isBindProperty: false,
-            isTriggerProperty: false,
-          },
-        ],
-      },
-    ];
-  }
   checkInvalidChildren = (children: WidgetProps[]): boolean => {
     return some(children, (child) => {
       if ("children" in child) {
@@ -86,7 +48,7 @@ class FormWidget extends ContainerWidget {
     const formData: any = {};
     if (formWidget.children)
       formWidget.children.forEach((widgetData) => {
-        if (widgetData.value) {
+        if (!isNil(widgetData.value)) {
           formData[widgetData.widgetName] = widgetData.value;
         }
       });

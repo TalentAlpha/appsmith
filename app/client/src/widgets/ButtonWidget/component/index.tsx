@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
-import styled from "styled-components";
-import tinycolor from "tinycolor2";
-
+import styled, { createGlobalStyle } from "styled-components";
+import Interweave from "interweave";
 import {
   IButtonProps,
   MaybeElement,
@@ -9,10 +8,9 @@ import {
   Alignment,
   Position,
 } from "@blueprintjs/core";
+import { Popover2 } from "@blueprintjs/popover2";
 import { IconName } from "@blueprintjs/icons";
 
-import Tooltip from "components/ads/Tooltip";
-import { Theme } from "constants/DefaultTheme";
 import { ComponentProps } from "widgets/BaseComponent";
 
 import { useScript, ScriptStatus } from "utils/hooks/useScript";
@@ -25,99 +23,25 @@ import { ThemeProp, Variant } from "components/ads/common";
 import { Toaster } from "components/ads/Toast";
 
 import ReCAPTCHA from "react-google-recaptcha";
+import { Colors } from "../../../constants/Colors";
 import _ from "lodash";
 import {
-  ButtonStyleTypes,
   ButtonBoxShadow,
   ButtonBoxShadowTypes,
   ButtonBorderRadius,
   ButtonBorderRadiusTypes,
-  ButtonStyleType,
   ButtonVariant,
   ButtonVariantTypes,
+  ButtonPlacement,
 } from "components/constants";
-
-const getCustomTextColor = (
-  theme: Theme,
-  backgroundColor?: string,
-  prevButtonStyle?: ButtonStyleType,
-) => {
-  if (!backgroundColor)
-    return theme.colors.button[
-      (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
-    ].solid.textColor;
-  const isDark = tinycolor(backgroundColor).isDark();
-  if (isDark) {
-    return theme.colors.button.custom.solid.light.textColor;
-  }
-  return theme.colors.button.custom.solid.dark.textColor;
-};
-
-const getCustomHoverColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  if (!backgroundColor) {
-    return theme.colors.button[
-      (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
-    ][(buttonVariant || ButtonVariantTypes.SOLID).toLowerCase()].hoverColor;
-  }
-
-  switch (buttonVariant) {
-    case ButtonVariantTypes.OUTLINE:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .lighten(40)
-            .toString()
-        : theme.colors.button.primary.outline.hoverColor;
-
-    case ButtonVariantTypes.GHOST:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .lighten(40)
-            .toString()
-        : theme.colors.button.primary.ghost.hoverColor;
-
-    default:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .darken(10)
-            .toString()
-        : theme.colors.button.primary.solid.hoverColor;
-  }
-};
-
-const getCustomBackgroundColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  return buttonVariant === ButtonVariantTypes.SOLID
-    ? backgroundColor
-      ? backgroundColor
-      : theme.colors.button[
-          (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
-        ].solid.bgColor
-    : "none";
-};
-
-const getCustomBorderColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  return buttonVariant === ButtonVariantTypes.OUTLINE
-    ? backgroundColor
-      ? backgroundColor
-      : theme.colors.button[
-          (prevButtonStyle || ButtonStyleTypes.PRIMARY).toLowerCase()
-        ].outline.borderColor
-    : "none";
-};
+import {
+  getCustomBackgroundColor,
+  getCustomBorderColor,
+  getCustomHoverColor,
+  getCustomTextColor,
+  getCustomJustifyContent,
+  getAlignText,
+} from "widgets/WidgetUtils";
 
 const RecaptchaWrapper = styled.div`
   position: relative;
@@ -126,25 +50,38 @@ const RecaptchaWrapper = styled.div`
   }
 `;
 
-const ToolTipContent = styled.div`
-  max-width: 350px;
-`;
-
 const ToolTipWrapper = styled.div`
   height: 100%;
-  && .bp3-popover-target {
+  && .bp3-popover2-target {
     height: 100%;
+    width: 100%;
     & > div {
       height: 100%;
     }
   }
 `;
 
-const ButtonContainer = styled.div`
+const TooltipStyles = createGlobalStyle`
+  .btnTooltipContainer {
+    .bp3-popover2-content {
+      max-width: 350px;
+      overflow-wrap: anywhere;
+      padding: 10px 12px;
+      border-radius: 0px;
+    }
+  }
+`;
+
+type ButtonContainerProps = {
+  disabled?: boolean;
+};
+
+const ButtonContainer = styled.div<ButtonContainerProps>`
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
+  ${({ disabled }) => disabled && "cursor: not-allowed;"}
 
   & > button {
     height: 100%;
@@ -154,12 +91,10 @@ const ButtonContainer = styled.div`
 const StyledButton = styled((props) => (
   <Button
     {..._.omit(props, [
-      "prevButtonStyle",
       "borderRadius",
       "boxShadow",
       "boxShadowColor",
       "buttonColor",
-      "buttonStyle",
       "buttonVariant",
     ])}
   />
@@ -170,98 +105,44 @@ const StyledButton = styled((props) => (
   outline: none;
   padding: 0px 10px;
 
-  ${({ buttonColor, buttonStyle, buttonVariant, prevButtonStyle, theme }) => `
+  ${({ buttonColor, buttonVariant, theme }) => `
     &:enabled {
       background: ${
-        buttonStyle === ButtonStyleTypes.WARNING
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.warning.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.danger.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.info.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.secondary.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomBackgroundColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )
-          : buttonVariant === ButtonVariantTypes.SOLID
-          ? theme.colors.button.primary.solid.bgColor
+        getCustomBackgroundColor(buttonVariant, buttonColor) !== "none"
+          ? getCustomBackgroundColor(buttonVariant, buttonColor)
+          : buttonVariant === ButtonVariantTypes.PRIMARY
+          ? theme.colors.button.primary.primary.bgColor
           : "none"
       } !important;
     }
 
     &:hover:enabled, &:active:enabled {
       background: ${
-        buttonStyle === ButtonStyleTypes.WARNING
-          ? buttonVariant === ButtonVariantTypes.OUTLINE
-            ? theme.colors.button.warning.outline.hoverColor
-            : buttonVariant === ButtonVariantTypes.GHOST
-            ? theme.colors.button.warning.ghost.hoverColor
-            : theme.colors.button.warning.solid.hoverColor
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.danger.solid.hoverColor
-            : theme.colors.button.danger.outline.hoverColor
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.info.solid.hoverColor
-            : theme.colors.button.info.outline.hoverColor
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? buttonVariant === ButtonVariantTypes.OUTLINE
-            ? theme.colors.button.secondary.outline.hoverColor
-            : buttonVariant === ButtonVariantTypes.GHOST
-            ? theme.colors.button.secondary.ghost.hoverColor
-            : theme.colors.button.secondary.solid.hoverColor
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomHoverColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )
-          : buttonVariant === ButtonVariantTypes.OUTLINE
-          ? theme.colors.button.primary.outline.hoverColor
-          : buttonVariant === ButtonVariantTypes.GHOST
-          ? theme.colors.button.primary.ghost.hoverColor
-          : theme.colors.button.primary.solid.hoverColor
+        getCustomHoverColor(theme, buttonVariant, buttonColor) !== "none"
+          ? getCustomHoverColor(theme, buttonVariant, buttonColor)
+          : buttonVariant === ButtonVariantTypes.SECONDARY
+          ? theme.colors.button.primary.secondary.hoverColor
+          : buttonVariant === ButtonVariantTypes.TERTIARY
+          ? theme.colors.button.primary.tertiary.hoverColor
+          : theme.colors.button.primary.primary.hoverColor
       } !important;
     }
 
     &:disabled {
       background-color: ${theme.colors.button.disabled.bgColor} !important;
       color: ${theme.colors.button.disabled.textColor} !important;
+      pointer-events: none;
+      border-color: ${theme.colors.button.disabled.bgColor} !important;
+      > span {
+        color: ${theme.colors.button.disabled.textColor} !important;
+      }
     }
 
     border: ${
-      buttonVariant === ButtonVariantTypes.OUTLINE
-        ? buttonStyle === ButtonStyleTypes.WARNING
-          ? `1px solid ${theme.colors.button.warning.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? `1px solid ${theme.colors.button.danger.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? `1px solid ${theme.colors.button.info.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? `1px solid ${theme.colors.button.secondary.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? `1px solid ${getCustomBorderColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )}`
-          : `1px solid ${theme.colors.button.primary.outline.borderColor}`
+      getCustomBorderColor(buttonVariant, buttonColor) !== "none"
+        ? `1px solid ${getCustomBorderColor(buttonVariant, buttonColor)}`
+        : buttonVariant === ButtonVariantTypes.SECONDARY
+        ? `1px solid ${theme.colors.button.primary.secondary.borderColor}`
         : "none"
     } !important;
 
@@ -275,30 +156,12 @@ const StyledButton = styled((props) => (
       -webkit-box-orient: vertical;
 
       color: ${
-        buttonVariant === ButtonVariantTypes.SOLID
-          ? buttonStyle === ButtonStyleTypes.CUSTOM
-            ? getCustomTextColor(theme, buttonColor, prevButtonStyle)
-            : `${theme.colors.button.primary.solid.textColor}`
-          : buttonStyle === ButtonStyleTypes.WARNING
-          ? `${theme.colors.button.warning.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? `${theme.colors.button.danger.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? `${theme.colors.button.info.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? `${theme.colors.button.secondary.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomBackgroundColor(
-              theme,
-              prevButtonStyle,
-              ButtonVariantTypes.SOLID,
-              buttonColor,
-            )
-          : `${theme.colors.button.primary.outline.textColor}`
+        buttonVariant === ButtonVariantTypes.PRIMARY
+          ? getCustomTextColor(theme, buttonColor)
+          : getCustomBackgroundColor(ButtonVariantTypes.PRIMARY, buttonColor)
       } !important;
     }
   `}
-
 
   border-radius: ${({ borderRadius }) =>
     borderRadius === ButtonBorderRadiusTypes.ROUNDED ? "5px" : 0};
@@ -320,18 +183,27 @@ const StyledButton = styled((props) => (
       ? `-2px -2px 0px ${boxShadowColor ||
           theme.colors.button.boxShadow.default.variant5}`
       : "none"} !important;
+
+  ${({ placement }) =>
+    placement
+      ? `
+      justify-content: ${getCustomJustifyContent(placement)};
+      & > span.bp3-button-text {
+        flex: unset !important;
+      }
+    `
+      : ""}
 `;
 
 type ButtonStyleProps = {
   buttonColor?: string;
-  buttonStyle?: ButtonStyleType;
-  prevButtonStyle?: ButtonStyleType;
   buttonVariant?: ButtonVariant;
   boxShadow?: ButtonBoxShadow;
   boxShadowColor?: string;
   borderRadius?: ButtonBorderRadius;
   iconName?: IconName;
   iconAlign?: Alignment;
+  placement?: ButtonPlacement;
 };
 
 // To be used in any other part of the app
@@ -341,7 +213,6 @@ export function BaseButton(props: IButtonProps & ButtonStyleProps) {
     boxShadow,
     boxShadowColor,
     buttonColor,
-    buttonStyle,
     buttonVariant,
     className,
     disabled,
@@ -350,59 +221,38 @@ export function BaseButton(props: IButtonProps & ButtonStyleProps) {
     iconName,
     loading,
     onClick,
-    prevButtonStyle,
+    placement,
     rightIcon,
     text,
   } = props;
 
-  if (iconAlign === Alignment.RIGHT) {
-    return (
-      <StyledButton
-        alignText={iconName ? Alignment.LEFT : Alignment.CENTER}
-        borderRadius={borderRadius}
-        boxShadow={boxShadow}
-        boxShadowColor={boxShadowColor}
-        buttonColor={buttonColor}
-        buttonStyle={buttonStyle}
-        buttonVariant={buttonVariant}
-        className={className}
-        disabled={disabled}
-        fill
-        icon={icon}
-        loading={loading}
-        onClick={onClick}
-        prevButtonStyle={prevButtonStyle}
-        rightIcon={iconName || rightIcon}
-        text={text}
-      />
-    );
-  }
+  const isRightAlign = iconAlign === Alignment.RIGHT;
 
   return (
     <StyledButton
-      alignText={iconName ? Alignment.RIGHT : Alignment.CENTER}
+      alignText={getAlignText(isRightAlign, iconName)}
       borderRadius={borderRadius}
       boxShadow={boxShadow}
       boxShadowColor={boxShadowColor}
       buttonColor={buttonColor}
-      buttonStyle={buttonStyle}
       buttonVariant={buttonVariant}
       className={className}
+      data-test-variant={buttonVariant}
       disabled={disabled}
       fill
-      icon={iconName || icon}
+      icon={isRightAlign ? icon : iconName || icon}
       loading={loading}
       onClick={onClick}
-      prevButtonStyle={prevButtonStyle}
-      rightIcon={rightIcon}
+      placement={placement}
+      rightIcon={isRightAlign ? iconName || rightIcon : rightIcon}
       text={text}
     />
   );
 }
 
 BaseButton.defaultProps = {
-  buttonStyle: "SECONDARY",
-  buttonVariant: "SOLID",
+  buttonColor: Colors.GREEN,
+  buttonVariant: ButtonVariantTypes.PRIMARY,
   disabled: false,
   text: "Button Text",
   minimal: true,
@@ -427,8 +277,6 @@ interface ButtonComponentProps extends ComponentProps {
   tooltip?: string;
   onClick?: (event: React.MouseEvent<HTMLElement>) => void;
   isDisabled?: boolean;
-  buttonStyle?: ButtonStyleType;
-  prevButtonStyle?: ButtonStyleType;
   isLoading: boolean;
   rightIcon?: IconName | MaybeElement;
   type: ButtonType;
@@ -439,6 +287,7 @@ interface ButtonComponentProps extends ComponentProps {
   boxShadowColor?: string;
   iconName?: IconName;
   iconAlign?: Alignment;
+  placement?: ButtonPlacement;
 }
 
 function RecaptchaV2Component(
@@ -579,20 +428,19 @@ function ButtonComponent(props: ButtonComponentProps & RecaptchaProps) {
       onClick={props.onClick}
       recaptchaV2={props.recaptchaV2}
     >
-      <ButtonContainer>
+      <ButtonContainer disabled={props.isDisabled}>
         <BaseButton
           borderRadius={props.borderRadius}
           boxShadow={props.boxShadow}
           boxShadowColor={props.boxShadowColor}
           buttonColor={props.buttonColor}
-          buttonStyle={props.buttonStyle}
           buttonVariant={props.buttonVariant}
           disabled={props.isDisabled}
           icon={props.icon}
           iconAlign={props.iconAlign}
           iconName={props.iconName}
           loading={props.isLoading}
-          prevButtonStyle={props.prevButtonStyle}
+          placement={props.placement}
           rightIcon={props.rightIcon}
           text={props.text}
           type={props.type}
@@ -603,13 +451,18 @@ function ButtonComponent(props: ButtonComponentProps & RecaptchaProps) {
   if (props.tooltip) {
     return (
       <ToolTipWrapper>
-        <Tooltip
-          content={<ToolTipContent>{props.tooltip}</ToolTipContent>}
+        <TooltipStyles />
+        <Popover2
+          autoFocus={false}
+          content={<Interweave content={props.tooltip} />}
+          disabled={props.isDisabled}
           hoverOpenDelay={200}
+          interactionKind="hover"
+          portalClassName="btnTooltipContainer"
           position={Position.TOP}
         >
           {btnWrapper}
-        </Tooltip>
+        </Popover2>
       </ToolTipWrapper>
     );
   } else {

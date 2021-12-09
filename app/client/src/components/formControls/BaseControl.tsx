@@ -33,7 +33,6 @@ export interface ControlBuilder<T extends ControlProps> {
 }
 
 export interface ControlProps extends ControlData, ControlFunctions {
-  serverLabel?: string;
   key?: string;
   extraData?: ControlData[];
   formName: string;
@@ -54,6 +53,10 @@ export interface ControlData {
   hidden?: HiddenType;
   placeholderText?: string;
   schema?: any;
+  logicalTypes?: string[];
+  comparisonTypes?: string[];
+  nestedLevels?: number;
+  customStyles?: any;
 }
 
 export interface ControlFunctions {

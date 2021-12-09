@@ -14,11 +14,17 @@ import {
 } from "components/editorComponents/CodeEditor/EditorConfig";
 import FormRow from "components/editorComponents/FormRow";
 import JSObjectNameEditor from "./JSObjectNameEditor";
-import { updateJSCollection } from "actions/jsPaneActions";
-import { useDispatch } from "react-redux";
+import { updateJSCollectionBody } from "actions/jsPaneActions";
+import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
 import { ExplorerURLParams } from "../Explorer/helpers";
 import JSResponseView from "components/editorComponents/JSResponseView";
+import { EVAL_ERROR_PATH } from "utils/DynamicBindingUtils";
+import { get } from "lodash";
+import { getDataTree } from "selectors/dataTreeSelectors";
+import { EvaluationError } from "utils/DynamicBindingUtils";
+import SearchSnippets from "components/ads/SnippetButton";
+import { ENTITY_TYPE } from "entities/DataTree/dataTreeFactory";
 
 const Form = styled.form`
   display: flex;
@@ -110,14 +116,18 @@ function JSEditorForm(props: Props) {
   const [mainTabIndex, setMainTabIndex] = useState(0);
   const dispatch = useDispatch();
   const currentJSAction = props.jsAction;
-
+  const dataTree = useSelector(getDataTree);
   const handleOnChange = (event: string) => {
     if (currentJSAction) {
-      dispatch(updateJSCollection(event, currentJSAction.id));
+      dispatch(updateJSCollectionBody(event, currentJSAction.id));
     }
   };
   const { pageId } = useParams<ExplorerURLParams>();
-
+  const getErrors = get(
+    dataTree,
+    `${currentJSAction.name}.${EVAL_ERROR_PATH}.body`,
+    [],
+  ) as EvaluationError[];
   return (
     <>
       <CloseEditor />
@@ -133,6 +143,10 @@ function JSEditorForm(props: Props) {
                 id={currentJSAction.id}
                 name={currentJSAction.name}
                 pageId={pageId}
+              />
+              <SearchSnippets
+                entityId={currentJSAction?.id}
+                entityType={ENTITY_TYPE.JSACTION}
               />
             </ActionButtons>
           </FormRow>
@@ -151,7 +165,7 @@ function JSEditorForm(props: Props) {
                       className={"js-editor"}
                       dataTreePath={`${currentJSAction.name}.body`}
                       folding
-                      height={"400px"}
+                      height={"100%"}
                       hideEvaluatedValue
                       input={{
                         value: currentJSAction.body,
@@ -170,7 +184,11 @@ function JSEditorForm(props: Props) {
               ]}
             />
           </TabbedViewContainer>
-          <JSResponseView jsObject={currentJSAction} theme={theme} />
+          <JSResponseView
+            errors={getErrors}
+            jsObject={currentJSAction}
+            theme={theme}
+          />
         </SecondaryWrapper>
       </Form>
     </>

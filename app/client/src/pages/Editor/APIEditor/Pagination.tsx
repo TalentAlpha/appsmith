@@ -7,7 +7,10 @@ import { PaginationType } from "entities/Action";
 import RadioFieldGroup from "components/editorComponents/form/fields/RadioGroupField";
 import Text, { Case, TextType } from "components/ads/Text";
 import Button, { Category, Size } from "components/ads/Button";
-import { EditorTheme } from "components/editorComponents/CodeEditor/EditorConfig";
+import {
+  CodeEditorBorder,
+  EditorTheme,
+} from "components/editorComponents/CodeEditor/EditorConfig";
 import GifPlayerComponent from "components/ads/GifPlayerComponent";
 import { Classes } from "components/ads/common";
 import lightmodeGif from "assets/icons/gifs/config_pagination_lightmode.gif";
@@ -152,16 +155,21 @@ export default function Pagination(props: PaginationProps) {
             </StepTitle>
             <Step type={TextType.P1}>Configure Next and Previous URL </Step>
             <Step type={TextType.P1}>Previous url</Step>
-            <PaginationFieldWrapper>
+            <PaginationFieldWrapper
+              data-replay-id={btoa("actionConfiguration.prev")}
+            >
               <DynamicTextField
+                border={CodeEditorBorder.ALL_SIDE}
                 className="t--apiFormPaginationPrev"
-                fill
+                fill={!!true}
+                height="100%"
                 name="actionConfiguration.prev"
                 theme={props.theme}
               />
               <Button
                 category={Category.tertiary}
                 className="t--apiFormPaginationPrevTest"
+                height="auto"
                 onClick={() => {
                   props.onTestClick("PREV");
                 }}
@@ -172,16 +180,21 @@ export default function Pagination(props: PaginationProps) {
               />
             </PaginationFieldWrapper>
             <Step type={TextType.P1}>Next url</Step>
-            <PaginationFieldWrapper>
+            <PaginationFieldWrapper
+              data-replay-id={btoa("actionConfiguration.next")}
+            >
               <DynamicTextField
+                border={CodeEditorBorder.ALL_SIDE}
                 className="t--apiFormPaginationNext"
-                fill
+                fill={!!true}
+                height="100%"
                 name="actionConfiguration.next"
                 theme={props.theme}
               />
               <Button
                 category={Category.tertiary}
                 className="t--apiFormPaginationNextTest"
+                height="auto"
                 onClick={() => {
                   props.onTestClick("NEXT");
                 }}

@@ -1,6 +1,10 @@
 import React from "react";
 import styled from "styled-components";
-import { labelStyle, IntentColors } from "constants/DefaultTheme";
+import {
+  labelStyle,
+  IntentColors,
+  getBorderCSSShorthand,
+} from "constants/DefaultTheme";
 import { ControlGroup, Classes, Label } from "@blueprintjs/core";
 import { ComponentProps } from "widgets/BaseComponent";
 import { DateInput } from "@blueprintjs/datetime";
@@ -20,22 +24,33 @@ import {
 const StyledControlGroup = styled(ControlGroup)<{ isValid: boolean }>`
   &&& {
     .${Classes.INPUT} {
+      color: ${Colors.GREY_10};
       box-shadow: none;
       border: 1px solid;
       border-color: ${(props) =>
         !props.isValid ? IntentColors.danger : Colors.GEYSER_LIGHT};
-      border-radius: ${(props) => props.theme.radii[1]}px;
       width: 100%;
       height: inherit;
       align-items: center;
       &:active {
-        border-color: ${(props) =>
-          !props.isValid ? IntentColors.danger : Colors.HIT_GRAY};
+        border-color: ${({ isValid }) =>
+          !isValid ? IntentColors.danger : Colors.HIT_GRAY};
       }
       &:focus {
-        border-color: ${(props) =>
-          !props.isValid ? IntentColors.danger : Colors.MYSTIC};
+        border-color: ${({ isValid }) =>
+          !isValid ? IntentColors.danger : Colors.MYSTIC};
+
+        &:focus {
+          border: ${(props) => getBorderCSSShorthand(props.theme.borders[2])};
+          border-color: #80bdff;
+          outline: 0;
+          box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+        }
       }
+    }
+    .${Classes.INPUT}:disabled {
+      background: ${Colors.GREY_1};
+      color: ${Colors.GREY_7};
     }
     .${Classes.INPUT_GROUP} {
       display: block;
@@ -58,9 +73,7 @@ const StyledControlGroup = styled(ControlGroup)<{ isValid: boolean }>`
       border: 1px solid;
       border-color: ${(props) =>
         !props.isValid ? IntentColors.danger : Colors.HIT_GRAY};
-      border-radius: ${(props) => props.theme.radii[1]}px;
       box-shadow: none;
-      color: ${Colors.OXFORD_BLUE};
       font-size: ${(props) => props.theme.fontSizes[3]}px;
     }
   }
@@ -74,11 +87,8 @@ class DatePickerComponent extends React.Component<
     super(props);
     this.state = {
       selectedDate: props.selectedDate,
-      showPicker: false,
     };
   }
-
-  pickerRef: HTMLElement | null = null;
 
   componentDidUpdate(prevProps: DatePickerComponentProps) {
     if (
@@ -95,11 +105,6 @@ class DatePickerComponent extends React.Component<
   getValidDate = (date: string, format: string) => {
     const _date = moment(date, format);
     return _date.isValid() ? _date.toDate() : undefined;
-  };
-
-  handlePopoverRef = (ref: any) => {
-    // get popover ref as callback
-    this.pickerRef = ref as HTMLElement;
   };
 
   render() {
@@ -153,9 +158,6 @@ class DatePickerComponent extends React.Component<
               closeOnSelection={this.props.closeOnSelection}
               disabled={this.props.isDisabled}
               formatDate={this.formatDate}
-              inputProps={{
-                onFocus: this.showPicker,
-              }}
               maxDate={maxDate}
               minDate={minDate}
               onChange={this.onDateSelected}
@@ -163,9 +165,7 @@ class DatePickerComponent extends React.Component<
               placeholder={"Select Date"}
               popoverProps={{
                 usePortal: !this.props.withoutPortal,
-                isOpen: this.state.showPicker,
-                onClose: this.closePicker,
-                popoverRef: this.handlePopoverRef,
+                canEscapeKeyClose: true,
               }}
               shortcuts={this.props.shortcuts}
               showActionsBar
@@ -234,35 +234,12 @@ class DatePickerComponent extends React.Component<
    */
   onDateSelected = (selectedDate: Date | null, isUserChange: boolean) => {
     if (isUserChange) {
-      const { closeOnSelection, onDateSelected } = this.props;
-
+      const { onDateSelected } = this.props;
       const date = selectedDate ? selectedDate.toISOString() : "";
       this.setState({
         selectedDate: date,
-        // close picker while user changes in calender
-        // if closeOnSelection false, do not allow user to close picker
-        showPicker: !closeOnSelection,
       });
-
       onDateSelected(date);
-    }
-  };
-
-  showPicker = () => {
-    this.setState({ showPicker: true });
-  };
-
-  closePicker = (e: any) => {
-    const { closeOnSelection } = this.props;
-    try {
-      // user click shortcuts, follow closeOnSelection behaviour otherwise close picker
-      const showPicker =
-        this.pickerRef && this.pickerRef.contains(e.target)
-          ? !closeOnSelection
-          : false;
-      this.setState({ showPicker });
-    } catch (error) {
-      this.setState({ showPicker: false });
     }
   };
 }
@@ -285,7 +262,6 @@ interface DatePickerComponentProps extends ComponentProps {
 
 interface DatePickerComponentState {
   selectedDate?: string;
-  showPicker?: boolean;
 }
 
 export default DatePickerComponent;

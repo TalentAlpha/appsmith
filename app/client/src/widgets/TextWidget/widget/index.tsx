@@ -1,4 +1,8 @@
 import React from "react";
+import { pick } from "lodash";
+import WidgetStyleContainer, {
+  WidgetStyleContainerProps,
+} from "components/designSystems/appsmith/WidgetStyleContainer";
 
 import { TextSize } from "constants/WidgetConstants";
 
@@ -7,6 +11,7 @@ import { DerivedPropertiesMap } from "utils/WidgetFactory";
 
 import BaseWidget, { WidgetProps, WidgetState } from "widgets/BaseWidget";
 import TextComponent, { TextAlign } from "../component";
+import { AutocompleteDataType } from "utils/autocomplete/TernServer";
 
 class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
   static getPropertyPaneConfig() {
@@ -19,7 +24,7 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
             helpText: "Sets the text of the widget",
             label: "Text",
             controlType: "INPUT_TEXT",
-            placeholderText: "Enter text",
+            placeholderText: "Name:",
             isBindProperty: true,
             isTriggerProperty: false,
             validation: { type: ValidationTypes.TEXT },
@@ -42,6 +47,16 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
             isTriggerProperty: false,
             validation: { type: ValidationTypes.BOOLEAN },
           },
+          {
+            propertyName: "disableLink",
+            helpText: "Controls parsing text as Link",
+            label: "Disable Link",
+            controlType: "SWITCH",
+            isJSConvertible: true,
+            isBindProperty: true,
+            isTriggerProperty: false,
+            validation: { type: ValidationTypes.BOOLEAN },
+          },
         ],
       },
       {
@@ -51,8 +66,20 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
             propertyName: "backgroundColor",
             label: "Cell Background",
             controlType: "COLOR_PICKER",
-            isBindProperty: false,
+            isJSConvertible: true,
+            isBindProperty: true,
             isTriggerProperty: false,
+            validation: {
+              type: ValidationTypes.TEXT,
+              params: {
+                regex: /^((?![<|{{]).+){0,1}/,
+                expected: {
+                  type: "string (HTML color name or HEX value)",
+                  example: `red | #9C0D38`,
+                  autocompleteDataType: AutocompleteDataType.STRING,
+                },
+              },
+            },
           },
           {
             propertyName: "textColor",
@@ -67,6 +94,27 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
                 regex: /^(?![<|{{]).+/,
               },
             },
+          },
+          {
+            helpText: "Use a html color name, HEX, RGB or RGBA value",
+            placeholderText: "#FFFFFF / Gray / rgb(255, 99, 71)",
+            propertyName: "borderColor",
+            label: "Border Colour",
+            controlType: "COLOR_PICKER",
+            isBindProperty: true,
+            isTriggerProperty: false,
+            validation: { type: ValidationTypes.TEXT },
+          },
+          {
+            helpText:
+              "Enter value for border width which can also use as margin",
+            propertyName: "borderWidth",
+            label: "Border Width",
+            placeholderText: "Enter value in px",
+            controlType: "INPUT_TEXT",
+            isBindProperty: true,
+            isTriggerProperty: false,
+            validation: { type: ValidationTypes.NUMBER },
           },
           {
             propertyName: "fontSize",
@@ -104,8 +152,21 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
                 icon: "PARAGRAPH_TWO",
               },
             ],
-            isBindProperty: false,
+            isJSConvertible: true,
+            isBindProperty: true,
             isTriggerProperty: false,
+            validation: {
+              type: ValidationTypes.TEXT,
+              params: {
+                allowedValues: [
+                  "HEADING1",
+                  "HEADING2",
+                  "HEADING3",
+                  "PARAGRAPH",
+                  "PARAGRAPH2",
+                ],
+              },
+            },
           },
           {
             propertyName: "fontStyle",
@@ -157,18 +218,28 @@ class TextWidget extends BaseWidget<TextWidgetProps, WidgetState> {
 
   getPageView() {
     return (
-      <TextComponent
-        backgroundColor={this.props.backgroundColor}
-        fontSize={this.props.fontSize}
-        fontStyle={this.props.fontStyle}
-        isLoading={this.props.isLoading}
-        key={this.props.widgetId}
-        shouldScroll={this.props.shouldScroll}
-        text={this.props.text}
-        textAlign={this.props.textAlign ? this.props.textAlign : "LEFT"}
-        textColor={this.props.textColor}
-        widgetId={this.props.widgetId}
-      />
+      <WidgetStyleContainer
+        {...pick(this.props, [
+          "widgetId",
+          "containerStyle",
+          "borderColor",
+          "borderWidth",
+        ])}
+      >
+        <TextComponent
+          backgroundColor={this.props.backgroundColor}
+          disableLink={this.props.disableLink || false}
+          fontSize={this.props.fontSize}
+          fontStyle={this.props.fontStyle}
+          isLoading={this.props.isLoading}
+          key={this.props.widgetId}
+          shouldScroll={this.props.shouldScroll}
+          text={this.props.text}
+          textAlign={this.props.textAlign ? this.props.textAlign : "LEFT"}
+          textColor={this.props.textColor}
+          widgetId={this.props.widgetId}
+        />
+      </WidgetStyleContainer>
     );
   }
 
@@ -191,10 +262,14 @@ export interface TextStyles {
   textAlign?: TextAlign;
 }
 
-export interface TextWidgetProps extends WidgetProps, TextStyles {
+export interface TextWidgetProps
+  extends WidgetProps,
+    TextStyles,
+    WidgetStyleContainerProps {
   text?: string;
   isLoading: boolean;
   shouldScroll: boolean;
+  disableLink: boolean;
 }
 
 export default TextWidget;

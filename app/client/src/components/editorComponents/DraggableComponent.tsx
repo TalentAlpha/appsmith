@@ -10,7 +10,10 @@ import {
   useWidgetDragResize,
 } from "utils/hooks/dragResizeHooks";
 import { commentModeSelector } from "selectors/commentsSelectors";
-import { snipingModeSelector } from "selectors/editorSelectors";
+import {
+  previewModeSelector,
+  snipingModeSelector,
+} from "selectors/editorSelectors";
 import { useWidgetSelection } from "utils/hooks/useWidgetSelection";
 
 const DraggableWrapper = styled.div`
@@ -52,13 +55,15 @@ export const canDrag = (
   props: any,
   isCommentMode: boolean,
   isSnipingMode: boolean,
+  isPreviewMode: boolean,
 ) => {
   return (
     !isResizingOrDragging &&
     !isDraggingDisabled &&
     !props?.dragDisabled &&
     !isCommentMode &&
-    !isSnipingMode
+    !isSnipingMode &&
+    !isPreviewMode
   );
 };
 
@@ -68,6 +73,7 @@ function DraggableComponent(props: DraggableComponentProps) {
 
   const isCommentMode = useSelector(commentModeSelector);
   const isSnipingMode = useSelector(snipingModeSelector);
+  const isPreviewMode = useSelector(previewModeSelector);
   // Dispatch hook handy to set any `DraggableComponent` as dragging/ not dragging
   // The value is boolean
   const { setDraggingCanvas, setDraggingState } = useWidgetDragResize();
@@ -80,6 +86,7 @@ function DraggableComponent(props: DraggableComponentProps) {
   const focusedWidget = useSelector(
     (state: AppState) => state.ui.widgetDragResize.focusedWidget,
   );
+  const isCurrentWidgetFocused = focusedWidget === props.widgetId;
   const isCurrentWidgetSelected = selectedWidgets.includes(props.widgetId);
 
   // This state tells us whether a `ResizableComponent` is resizing
@@ -107,7 +114,7 @@ function DraggableComponent(props: DraggableComponentProps) {
   const handleMouseOver = (e: any) => {
     focusWidget &&
       !isResizingOrDragging &&
-      focusedWidget !== props.widgetId &&
+      !isCurrentWidgetFocused &&
       !props.resizeDisabled &&
       focusWidget(props.widgetId);
     e.stopPropagation();
@@ -140,6 +147,7 @@ function DraggableComponent(props: DraggableComponentProps) {
     props,
     isCommentMode,
     isSnipingMode,
+    isPreviewMode,
   );
   const className = `${classNameForTesting}`;
   const draggableRef = useRef<HTMLDivElement>(null);
@@ -147,7 +155,11 @@ function DraggableComponent(props: DraggableComponentProps) {
   const onDragStart = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggableRef.current && !(e.metaKey || e.ctrlKey)) {
+    // allowDrag check is added as react jest test simulation is not respecting default behaviour
+    // of draggable=false and triggering onDragStart. allowDrag condition check is purely for the test cases.
+    if (allowDrag && draggableRef.current && !(e.metaKey || e.ctrlKey)) {
+      if (!isCurrentWidgetFocused) return;
+
       if (!isCurrentWidgetSelected) {
         selectWidget(props.widgetId);
       }
