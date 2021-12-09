@@ -908,7 +908,7 @@ public class UserServiceImpl extends BaseService<UserRepository, User, String> i
                     profile.setEmptyInstance(isUsersEmpty);
                     profile.setAnonymous(userFromDb.isAnonymous());
                     profile.setEnabled(userFromDb.isEnabled());
-                    profile.setTokenId(userFromDb.getTokenId())
+                    profile.setTokenId(userFromDb.getTokenId());
                     profile.setCommentOnboardingState(userData.getCommentOnboardingState());
                     profile.setRole(userData.getRole());
                     profile.setUseCase(userData.getUseCase());
