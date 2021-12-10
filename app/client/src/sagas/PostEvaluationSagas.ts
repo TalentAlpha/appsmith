@@ -5,6 +5,7 @@ import {
   DataTreeDiffEvent,
   getEntityNameAndPropertyPath,
   isAction,
+  isJSAction,
   isWidget,
 } from "workers/evaluationUtils";
 import {
@@ -31,7 +32,7 @@ import {
   createMessage,
   ERROR_EVAL_ERROR_GENERIC,
   ERROR_EVAL_TRIGGER,
-  PARSE_JS_FUNCTION_ERROR,
+  JS_OBJECT_BODY_INVALID,
   VALUE_IS_INVALID,
 } from "constants/messages";
 import log from "loglevel";
@@ -40,8 +41,7 @@ import { getAppMode } from "selectors/applicationSelectors";
 import { APP_MODE } from "entities/App";
 import { dataTreeTypeDefCreator } from "utils/autocomplete/dataTreeTypeDefCreator";
 import TernServer from "utils/autocomplete/TernServer";
-import getFeatureFlags from "utils/featureFlags";
-import { TriggerEvaluationError } from "sagas/ActionExecution/ActionExecutionSagas";
+import { TriggerEvaluationError } from "sagas/ActionExecution/errorUtils";
 
 const getDebuggerErrors = (state: AppState) => state.ui.debugger.errors;
 /**
@@ -52,6 +52,7 @@ const getDebuggerErrors = (state: AppState) => state.ui.debugger.errors;
  * W117: `x` is undefined
  */
 const errorCodesToIgnoreInDebugger = ["W117"];
+const errorCodesForJSEditorInDebugger = ["E041"]; //how much object parsed error example 90% parsed
 
 function logLatestEvalPropertyErrors(
   currentDebuggerErrors: Record<string, Log>,
@@ -67,8 +68,8 @@ function logLatestEvalPropertyErrors(
       evaluatedPath,
     );
     const entity = dataTree[entityName];
-    if (isWidget(entity) || isAction(entity)) {
-      if (propertyPath in entity.logBlackList) {
+    if (isWidget(entity) || isAction(entity) || isJSAction(entity)) {
+      if (entity.logBlackList && propertyPath in entity.logBlackList) {
         continue;
       }
       let allEvalErrors: EvaluationError[] = get(
@@ -76,12 +77,15 @@ function logLatestEvalPropertyErrors(
         getEvalErrorPath(evaluatedPath, false),
         [],
       );
-      // If linting flag is not own, filter out all lint errors
-      if (!getFeatureFlags().LINTING) {
-        allEvalErrors = allEvalErrors.filter(
-          (err) => err.errorType !== PropertyEvaluationErrorType.LINT,
-        );
-      }
+
+      allEvalErrors = isJSAction(entity)
+        ? allEvalErrors.filter(
+            (err) => !errorCodesForJSEditorInDebugger.includes(err.code || ""),
+          )
+        : allEvalErrors.filter(
+            (err) => err.errorType !== PropertyEvaluationErrorType.LINT,
+          );
+
       const evaluatedValue = get(
         entity,
         getEvalValuePath(evaluatedPath, false),
@@ -90,11 +94,15 @@ function logLatestEvalPropertyErrors(
       const evalWarnings: EvaluationError[] = [];
 
       for (const err of allEvalErrors) {
-        if (
-          err.severity === Severity.WARNING &&
-          !errorCodesToIgnoreInDebugger.includes(err.code || "")
-        ) {
-          evalWarnings.push(err);
+        if (err.severity === Severity.WARNING) {
+          if (
+            !isJSAction(entity) &&
+            !errorCodesToIgnoreInDebugger.includes(err.code || "")
+          ) {
+            evalWarnings.push(err);
+          } else {
+            evalWarnings.push(err);
+          }
         }
         if (err.severity === Severity.ERROR) {
           evalErrors.push(err);
@@ -105,7 +113,9 @@ function logLatestEvalPropertyErrors(
       const nameField = isWidget(entity) ? entity.widgetName : entity.name;
       const entityType = isWidget(entity)
         ? ENTITY_TYPE.WIDGET
-        : ENTITY_TYPE.ACTION;
+        : isAction(entity)
+        ? ENTITY_TYPE.ACTION
+        : ENTITY_TYPE.JSACTION;
       const debuggerKeys = [
         {
           key: `${idField}-${propertyPath}`,
@@ -130,10 +140,12 @@ function logLatestEvalPropertyErrors(
           // Reformatting eval errors here to a format usable by the debugger
           const errorMessages = errors.map((e) => {
             // Error format required for the debugger
-            return {
+            const formattedError = {
               message: e.errorMessage,
               type: e.errorType,
             };
+
+            return formattedError;
           });
 
           const analyticsData = isWidget(entity)
@@ -141,29 +153,40 @@ function logLatestEvalPropertyErrors(
                 widgetType: entity.type,
               }
             : {};
-
+          const logPropertyPath = !isJSAction(entity)
+            ? propertyPath
+            : entityName;
           // Add or update
-          AppsmithConsole.addError(
-            {
-              id: debuggerKey,
-              logType: isWarning ? LOG_TYPE.EVAL_WARNING : LOG_TYPE.EVAL_ERROR,
-              // Unless the intention is to change the message shown in the debugger please do not
-              // change the text shown here
-              text: createMessage(VALUE_IS_INVALID, propertyPath),
-              messages: errorMessages,
-              source: {
-                id: idField,
-                name: nameField,
-                type: entityType,
-                propertyPath: propertyPath,
+          if (
+            !isJSAction(entity) ||
+            (isJSAction(entity) && propertyPath === "body")
+          ) {
+            AppsmithConsole.addError(
+              {
+                id: debuggerKey,
+                logType: isWarning
+                  ? LOG_TYPE.EVAL_WARNING
+                  : LOG_TYPE.EVAL_ERROR,
+                // Unless the intention is to change the message shown in the debugger please do not
+                // change the text shown here
+                text: isJSAction(entity)
+                  ? createMessage(JS_OBJECT_BODY_INVALID)
+                  : createMessage(VALUE_IS_INVALID, propertyPath),
+                messages: errorMessages,
+                source: {
+                  id: idField,
+                  name: nameField,
+                  type: entityType,
+                  propertyPath: logPropertyPath,
+                },
+                state: {
+                  [logPropertyPath]: evaluatedValue,
+                },
+                analytics: analyticsData,
               },
-              state: {
-                [propertyPath]: evaluatedValue,
-              },
-              analytics: analyticsData,
-            },
-            isWarning ? Severity.WARNING : Severity.ERROR,
-          );
+              isWarning ? Severity.WARNING : Severity.ERROR,
+            );
+          }
         } else if (debuggerKey in updatedDebuggerErrors) {
           AppsmithConsole.deleteError(debuggerKey);
         }
@@ -239,32 +262,12 @@ export function* evalErrorHandler(
       }
       case EvalErrorTypes.EVAL_TRIGGER_ERROR: {
         log.error(error);
-        const message = createMessage(ERROR_EVAL_TRIGGER, error.message);
-        Toaster.show({
-          text: message,
-          variant: Variant.danger,
-          showDebugButton: true,
-        });
-        AppsmithConsole.error({
-          text: message,
-        });
-        throw new TriggerEvaluationError(message);
+        throw new TriggerEvaluationError(
+          createMessage(ERROR_EVAL_TRIGGER, error.message),
+        );
       }
       case EvalErrorTypes.EVAL_PROPERTY_ERROR: {
         log.debug(error);
-        break;
-      }
-      case EvalErrorTypes.PARSE_JS_ERROR: {
-        AppsmithConsole.addError({
-          id: error?.context?.id,
-          logType: LOG_TYPE.JS_PARSE_ERROR,
-          text: createMessage(PARSE_JS_FUNCTION_ERROR, error.message),
-          source: {
-            type: ENTITY_TYPE.JSACTION,
-            name: error?.context?.name,
-            id: error?.context?.id,
-          },
-        });
         break;
       }
       case EvalErrorTypes.CLONE_ERROR: {
@@ -272,6 +275,22 @@ export function* evalErrorHandler(
           extra: {
             request: error.context,
           },
+        });
+        break;
+      }
+      case EvalErrorTypes.PARSE_JS_ERROR: {
+        Toaster.show({
+          text: `${error.message} at: ${error.context?.entity.name}`,
+          variant: Variant.danger,
+        });
+        AppsmithConsole.error({
+          text: `${error.message} at: ${error.context?.propertyPath}`,
+        });
+        break;
+      }
+      case EvalErrorTypes.EXTRACT_DEPENDENCY_ERROR: {
+        Sentry.captureException(new Error(error.message), {
+          extra: error.context,
         });
         break;
       }

@@ -5,119 +5,64 @@ import { Classes, Popover2 } from "@blueprintjs/popover2";
 import { IconName } from "@blueprintjs/icons";
 import tinycolor from "tinycolor2";
 
-import { darkenActive, darkenHover, Theme } from "constants/DefaultTheme";
+import { darkenActive, darkenHover } from "constants/DefaultTheme";
 import {
   ButtonBoxShadow,
   ButtonBoxShadowTypes,
   ButtonBorderRadius,
   ButtonBorderRadiusTypes,
-  ButtonStyleType,
-  ButtonStyleTypes,
   ButtonVariant,
   ButtonVariantTypes,
+  ButtonPlacement,
 } from "components/constants";
 import { ThemeProp } from "components/ads/common";
+import {
+  getCustomBackgroundColor,
+  getCustomBorderColor,
+  getCustomHoverColor,
+  getCustomTextColor,
+  getCustomJustifyContent,
+  getAlignText,
+  WidgetContainerDiff,
+} from "widgets/WidgetUtils";
+import _ from "lodash";
 
-const getCustomTextColor = (
-  theme: Theme,
-  backgroundColor?: string,
-  prevButtonStyle?: ButtonStyleType,
-) => {
-  if (!backgroundColor)
-    return prevButtonStyle
-      ? theme.colors.button[prevButtonStyle.toLowerCase()].solid.textColor
-      : theme.colors.button.custom.solid.dark.textColor;
-
-  const isDark = tinycolor(backgroundColor).isDark();
-  if (isDark) {
-    return theme.colors.button.custom.solid.light.textColor;
-  }
-  return theme.colors.button.custom.solid.dark.textColor;
+type MenuButtonContainerProps = {
+  disabled?: boolean;
 };
 
-const getCustomHoverColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  if (!backgroundColor) {
-    return prevButtonStyle
-      ? theme.colors.button[prevButtonStyle.toLowerCase()][
-          (buttonVariant || ButtonVariantTypes.SOLID).toLowerCase()
-        ].hoverColor
-      : tinycolor(theme.colors.button.primary.solid.textColor)
-          .darken()
-          .toString();
-  }
-  switch (buttonVariant) {
-    case ButtonVariantTypes.OUTLINE:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .lighten(40)
-            .toString()
-        : theme.colors.button.primary.outline.hoverColor;
-
-    case ButtonVariantTypes.GHOST:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .lighten(40)
-            .toString()
-        : theme.colors.button.primary.ghost.hoverColor;
-
-    default:
-      return backgroundColor
-        ? tinycolor(backgroundColor)
-            .darken(10)
-            .toString()
-        : theme.colors.button.primary.solid.hoverColor;
-  }
-};
-
-const getCustomBackgroundColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  return buttonVariant === ButtonVariantTypes.SOLID
-    ? backgroundColor
-      ? backgroundColor
-      : prevButtonStyle
-      ? theme.colors.button[prevButtonStyle.toLowerCase()].solid.bgColor
-      : "none"
-    : "none";
-};
-
-const getCustomBorderColor = (
-  theme: Theme,
-  prevButtonStyle?: ButtonStyleType,
-  buttonVariant?: ButtonVariant,
-  backgroundColor?: string,
-) => {
-  return buttonVariant === ButtonVariantTypes.OUTLINE
-    ? backgroundColor
-      ? backgroundColor
-      : prevButtonStyle
-      ? theme.colors.button[prevButtonStyle.toLowerCase()].outline.borderColor
-      : "none"
-    : "none";
-};
-
-export const MenuButtonContainer = styled.div`
+export const MenuButtonContainer = styled.div<MenuButtonContainerProps>`
   width: 100%;
   height: 100%;
   text-align: center;
+  ${({ disabled }) => disabled && "cursor: not-allowed;"}
 
   & > .${Classes.POPOVER2_TARGET} {
     height: 100%;
   }
 `;
 
-const PopoverStyles = createGlobalStyle`
+const PopoverStyles = createGlobalStyle<{
+  parentWidth: number;
+  menuDropDownWidth: number;
+  id: string;
+}>`
   .menu-button-popover > .${Classes.POPOVER2_CONTENT} {
     background: none;
   }
+  ${({ id, menuDropDownWidth, parentWidth }) => `
+  .menu-button-width-${id} {
+
+    max-width: ${
+      menuDropDownWidth > parentWidth
+        ? `${menuDropDownWidth}px`
+        : `${parentWidth}px`
+    } !important;
+    min-width: ${
+      parentWidth > menuDropDownWidth ? parentWidth : menuDropDownWidth
+    }px !important;
+  }
+`}
 `;
 
 export interface BaseStyleProps {
@@ -126,11 +71,10 @@ export interface BaseStyleProps {
   boxShadow?: ButtonBoxShadow;
   boxShadowColor?: string;
   buttonColor?: string;
-  buttonStyle?: ButtonStyleType;
   buttonVariant?: ButtonVariant;
   isCompact?: boolean;
-  prevButtonStyle?: ButtonStyleType;
   textColor?: string;
+  placement?: ButtonPlacement;
 }
 
 const BaseButton = styled(Button)<ThemeProp & BaseStyleProps>`
@@ -144,101 +88,46 @@ const BaseButton = styled(Button)<ThemeProp & BaseStyleProps>`
   border-radius: 0;
   box-shadow: none !important;
 
-  ${({ buttonColor, buttonStyle, buttonVariant, prevButtonStyle, theme }) => `
+  ${({ buttonColor, buttonVariant, theme }) => `
     &:enabled {
       background: ${
-        buttonStyle === ButtonStyleTypes.WARNING
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.warning.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.danger.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.info.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.secondary.solid.bgColor
-            : "none"
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomBackgroundColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )
-          : buttonVariant === ButtonVariantTypes.SOLID
-          ? theme.colors.button.primary.solid.bgColor
+        getCustomBackgroundColor(buttonVariant, buttonColor) !== "none"
+          ? getCustomBackgroundColor(buttonVariant, buttonColor)
+          : buttonVariant === ButtonVariantTypes.PRIMARY
+          ? theme.colors.button.primary.primary.bgColor
           : "none"
       } !important;
     }
 
     &:hover:enabled, &:active:enabled {
       background: ${
-        buttonStyle === ButtonStyleTypes.WARNING
-          ? buttonVariant === ButtonVariantTypes.OUTLINE
-            ? theme.colors.button.warning.outline.hoverColor
-            : buttonVariant === ButtonVariantTypes.GHOST
-            ? theme.colors.button.warning.ghost.hoverColor
-            : theme.colors.button.warning.solid.hoverColor
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.danger.solid.hoverColor
-            : theme.colors.button.danger.outline.hoverColor
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? buttonVariant === ButtonVariantTypes.SOLID
-            ? theme.colors.button.info.solid.hoverColor
-            : theme.colors.button.info.outline.hoverColor
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? buttonVariant === ButtonVariantTypes.OUTLINE
-            ? theme.colors.button.secondary.outline.hoverColor
-            : buttonVariant === ButtonVariantTypes.GHOST
-            ? theme.colors.button.secondary.ghost.hoverColor
-            : theme.colors.button.secondary.solid.hoverColor
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomHoverColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )
-          : buttonVariant === ButtonVariantTypes.OUTLINE
-          ? theme.colors.button.primary.outline.hoverColor
-          : buttonVariant === ButtonVariantTypes.GHOST
-          ? theme.colors.button.primary.ghost.hoverColor
-          : theme.colors.button.primary.solid.hoverColor
+        getCustomHoverColor(theme, buttonVariant, buttonColor) !== "none"
+          ? getCustomHoverColor(theme, buttonVariant, buttonColor)
+          : buttonVariant === ButtonVariantTypes.SECONDARY
+          ? theme.colors.button.primary.secondary.hoverColor
+          : buttonVariant === ButtonVariantTypes.TERTIARY
+          ? theme.colors.button.primary.tertiary.hoverColor
+          : theme.colors.button.primary.primary.hoverColor
       } !important;
     }
 
     &:disabled {
       background-color: ${theme.colors.button.disabled.bgColor} !important;
       color: ${theme.colors.button.disabled.textColor} !important;
+      pointer-events: none;
+      border-color: ${theme.colors.button.disabled.bgColor} !important;
+      > span {
+        color: ${theme.colors.button.disabled.textColor} !important;
+      }
     }
 
     border: ${
-      buttonVariant === ButtonVariantTypes.OUTLINE
-        ? buttonStyle === ButtonStyleTypes.WARNING
-          ? `1px solid ${theme.colors.button.warning.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? `1px solid ${theme.colors.button.danger.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? `1px solid ${theme.colors.button.info.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? `1px solid ${theme.colors.button.secondary.outline.borderColor}`
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? `1px solid ${getCustomBorderColor(
-              theme,
-              prevButtonStyle,
-              buttonVariant,
-              buttonColor,
-            )}`
-          : `1px solid ${theme.colors.button.primary.outline.borderColor}`
+      getCustomBorderColor(buttonVariant, buttonColor) !== "none"
+        ? `1px solid ${getCustomBorderColor(buttonVariant, buttonColor)}`
+        : buttonVariant === ButtonVariantTypes.SECONDARY
+        ? `1px solid ${theme.colors.button.primary.secondary.borderColor}`
         : "none"
     } !important;
-
     & > span {
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -248,30 +137,17 @@ const BaseButton = styled(Button)<ThemeProp & BaseStyleProps>`
       max-height: 100%;
       overflow: hidden;
       color: ${
-        buttonVariant === ButtonVariantTypes.SOLID
-          ? buttonStyle === ButtonStyleTypes.CUSTOM
-            ? getCustomTextColor(theme, buttonColor, prevButtonStyle)
-            : `${theme.colors.button.primary.solid.textColor}`
-          : buttonStyle === ButtonStyleTypes.WARNING
-          ? `${theme.colors.button.warning.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.DANGER
-          ? `${theme.colors.button.danger.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.INFO
-          ? `${theme.colors.button.info.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.SECONDARY
-          ? `${theme.colors.button.secondary.outline.textColor}`
-          : buttonStyle === ButtonStyleTypes.CUSTOM
-          ? getCustomBackgroundColor(
-              theme,
-              prevButtonStyle,
-              ButtonVariantTypes.SOLID,
+        buttonVariant === ButtonVariantTypes.PRIMARY
+          ? getCustomTextColor(theme, buttonColor)
+          : getCustomBackgroundColor(
+              ButtonVariantTypes.PRIMARY,
               buttonColor,
-            )
-          : `${theme.colors.button.primary.outline.textColor}`
+            ) !== "none"
+          ? getCustomBackgroundColor(ButtonVariantTypes.PRIMARY, buttonColor)
+          : `${theme.colors.button.primary.secondary.textColor}`
       } !important;
     }
   `}
-
 
   border-radius: ${({ borderRadius }) =>
     borderRadius === ButtonBorderRadiusTypes.ROUNDED ? "5px" : 0};
@@ -293,6 +169,16 @@ const BaseButton = styled(Button)<ThemeProp & BaseStyleProps>`
       ? `-2px -2px 0px ${boxShadowColor ||
           theme.colors.button.boxShadow.default.variant5}`
       : "none"} !important;
+
+  ${({ placement }) =>
+    placement
+      ? `
+      justify-content: ${getCustomJustifyContent(placement)};
+      & > span.bp3-button-text {
+        flex: unset !important;
+      }
+    `
+      : ""}
 `;
 
 const BaseMenuItem = styled(MenuItem)<ThemeProp & BaseStyleProps>`
@@ -311,14 +197,14 @@ const BaseMenuItem = styled(MenuItem)<ThemeProp & BaseStyleProps>`
     background: none !important
       &:hover {
         background-color: ${tinycolor(
-          theme.colors.button.primary.solid.textColor,
+          theme.colors.button.primary.primary.textColor,
         )
           .darken()
           .toString()} !important;
       }
       &:active {
         background-color: ${tinycolor(
-          theme.colors.button.primary.solid.textColor,
+          theme.colors.button.primary.primary.textColor,
         )
           .darken()
           .toString()} !important;
@@ -340,7 +226,7 @@ const BaseMenuItem = styled(MenuItem)<ThemeProp & BaseStyleProps>`
 
 const StyledMenu = styled(Menu)`
   padding: 0;
-  background: none;
+  min-width: 0px;
 `;
 
 export interface PopoverContentProps {
@@ -368,6 +254,7 @@ export interface PopoverContentProps {
 function PopoverContent(props: PopoverContentProps) {
   const { isCompact, menuItems: itemsObj, onItemClicked } = props;
 
+  if (!itemsObj) return <StyledMenu />;
   const items = Object.keys(itemsObj)
     .map((itemKey) => itemsObj[itemKey])
     .filter((item) => item.isVisible === true);
@@ -419,14 +306,13 @@ export interface PopoverTargetButtonProps {
   borderRadius?: ButtonBorderRadius;
   boxShadow?: ButtonBoxShadow;
   boxShadowColor?: string;
-  buttonStyle?: ButtonStyleType;
   buttonColor?: string;
   buttonVariant?: ButtonVariant;
   iconName?: IconName;
   iconAlign?: Alignment;
   isDisabled?: boolean;
   label?: string;
-  prevButtonStyle?: ButtonStyleType;
+  placement?: ButtonPlacement;
 }
 
 function PopoverTargetButton(props: PopoverTargetButtonProps) {
@@ -435,47 +321,28 @@ function PopoverTargetButton(props: PopoverTargetButtonProps) {
     boxShadow,
     boxShadowColor,
     buttonColor,
-    buttonStyle,
     buttonVariant,
     iconAlign,
     iconName,
     isDisabled,
     label,
-    prevButtonStyle,
+    placement,
   } = props;
-
-  if (iconAlign === Alignment.RIGHT) {
-    return (
-      <BaseButton
-        alignText={iconName ? Alignment.LEFT : Alignment.CENTER}
-        borderRadius={borderRadius}
-        boxShadow={boxShadow}
-        boxShadowColor={boxShadowColor}
-        buttonColor={buttonColor}
-        buttonStyle={buttonStyle}
-        buttonVariant={buttonVariant}
-        disabled={isDisabled}
-        fill
-        prevButtonStyle={prevButtonStyle}
-        rightIcon={iconName}
-        text={label}
-      />
-    );
-  }
+  const isRightAlign = iconAlign === Alignment.RIGHT;
 
   return (
     <BaseButton
-      alignText={iconName ? Alignment.RIGHT : Alignment.CENTER}
+      alignText={getAlignText(isRightAlign, iconName)}
       borderRadius={borderRadius}
       boxShadow={boxShadow}
       boxShadowColor={boxShadowColor}
       buttonColor={buttonColor}
-      buttonStyle={buttonStyle}
       buttonVariant={buttonVariant}
       disabled={isDisabled}
       fill
-      icon={iconName}
-      prevButtonStyle={prevButtonStyle}
+      icon={isRightAlign ? undefined : iconName}
+      placement={placement}
+      rightIcon={isRightAlign ? iconName : undefined}
       text={label}
     />
   );
@@ -503,8 +370,6 @@ export interface MenuButtonComponentProps {
       onClick?: string;
     }
   >;
-  menuStyle?: ButtonStyleType;
-  prevMenuStyle?: ButtonStyleType;
   menuVariant?: ButtonVariant;
   menuColor?: string;
   borderRadius?: ButtonBorderRadius;
@@ -514,6 +379,9 @@ export interface MenuButtonComponentProps {
   iconAlign?: Alignment;
   onItemClicked: (onClick: string | undefined) => void;
   backgroundColor?: string;
+  placement?: ButtonPlacement;
+  width: number;
+  menuDropDownWidth: number;
 }
 
 function MenuButtonComponent(props: MenuButtonComponentProps) {
@@ -527,16 +395,22 @@ function MenuButtonComponent(props: MenuButtonComponentProps) {
     isDisabled,
     label,
     menuColor,
+    menuDropDownWidth,
     menuItems,
-    menuStyle,
     menuVariant,
     onItemClicked,
-    prevMenuStyle,
+    placement,
+    width,
   } = props;
+  const id = _.uniqueId();
 
   return (
-    <MenuButtonContainer>
-      <PopoverStyles />
+    <MenuButtonContainer disabled={isDisabled}>
+      <PopoverStyles
+        id={id}
+        menuDropDownWidth={menuDropDownWidth}
+        parentWidth={width - WidgetContainerDiff}
+      />
       <Popover2
         content={
           <PopoverContent
@@ -549,20 +423,19 @@ function MenuButtonComponent(props: MenuButtonComponentProps) {
         fill
         minimal
         placement="bottom-end"
-        popoverClassName="menu-button-popover"
+        popoverClassName={`menu-button-popover menu-button-width-${id}`}
       >
         <PopoverTargetButton
           borderRadius={borderRadius}
           boxShadow={boxShadow}
           boxShadowColor={boxShadowColor}
           buttonColor={menuColor}
-          buttonStyle={menuStyle}
           buttonVariant={menuVariant}
           iconAlign={iconAlign}
           iconName={iconName}
           isDisabled={isDisabled}
           label={label}
-          prevButtonStyle={prevMenuStyle}
+          placement={placement}
         />
       </Popover2>
     </MenuButtonContainer>

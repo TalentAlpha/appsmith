@@ -79,6 +79,27 @@ describe("Input Widget Functionality", function() {
       .should("contain", this.data.placeholder);
     cy.get(publish.backToEditor).click({ force: true });
   });
+
+  it("isSpellCheck: true", function() {
+    cy.openPropertyPane("inputwidget");
+    cy.togglebar(commonlocators.spellCheck + " " + "input");
+    cy.PublishtheApp();
+    cy.get(publish.inputWidget + " " + "input")
+      .invoke("attr", "spellcheck")
+      .should("eq", "true");
+    cy.get(publish.backToEditor).click({ force: true });
+  });
+
+  it("isSpellCheck: false", function() {
+    cy.openPropertyPane("inputwidget");
+    cy.togglebarDisable(commonlocators.spellCheck + " " + "input");
+    cy.PublishtheApp();
+    cy.get(publish.inputWidget + " " + "input")
+      .invoke("attr", "spellcheck")
+      .should("eq", "false");
+    cy.get(publish.backToEditor).click({ force: true });
+  });
+
   it("Input Widget Functionality To Check Disabled Widget", function() {
     cy.openPropertyPane("inputwidget");
     cy.togglebar(commonlocators.Disablejs + " " + "input");
@@ -199,6 +220,20 @@ describe("Input Widget Functionality", function() {
       .first()
       .click({ force: true });
     cy.get(".bp3-input-group .bp3-icon-add").should("exist");
+  });
+
+  it("Input value of number type should reflect the default text value 0", () => {
+    cy.selectDropdownValue(commonlocators.dataType, "Number");
+    /*cy.get(widgetsPage.defaultInput)
+      .click({ force: true })
+      .type("0");*/
+    cy.testJsontext("defaulttext", "0");
+    cy.closePropertyPane("inputwidget");
+    cy.get(widgetsPage.innertext)
+      .invoke("val")
+      .then((text) => {
+        expect(text).to.equal("0");
+      });
   });
 });
 afterEach(() => {

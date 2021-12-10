@@ -2,12 +2,14 @@ import React, { useState } from "react";
 
 import styled from "styled-components";
 import { Classes, MenuItem } from "@blueprintjs/core";
-import { noop } from "lodash";
+import _, { noop } from "lodash";
 
 import { CommonComponentProps } from "components/ads/common";
-import Icon, { IconSize } from "components/ads/Icon";
 import AnalyticsUtil from "utils/AnalyticsUtil";
 import { getTypographyByKey } from "constants/DefaultTheme";
+import { HeaderIcons } from "icons/HeaderIcons";
+
+const ShareIcon = HeaderIcons.SHARE;
 
 export enum MenuTypes {
   MENU = "menu",
@@ -18,6 +20,7 @@ export enum MenuTypes {
 export interface MenuItemData {
   text: string;
   label?: string;
+  labelElement?: React.ReactNode;
   onClick?: typeof noop;
   children?: MenuItemData[];
   type: MenuTypes;
@@ -27,7 +30,13 @@ export interface MenuItemData {
   style?: React.CSSProperties;
 }
 
-const StyledMenuItem = styled(MenuItem)`
+const StyledMenuItem = styled((props) => {
+  // we are removing non input related props before passing them in the components
+  // eslint-disable @typescript-eslint/no-unused-vars
+  const omitProps = ["isConfirm"];
+
+  return <MenuItem {..._.omit(props, omitProps)} />;
+})`
   width: 240px;
   background: ${(props) =>
     props.theme.colors.navigationMenu.backgroundInactive};
@@ -96,9 +105,11 @@ export function NavigationMenuItem({
 
   if (!isVisible) return null;
 
-  const labelElement = isOpensNewWindow && (
-    <Icon name="open" size={IconSize.LARGE} />
-  );
+  const labelElement =
+    menuItemData.labelElement ||
+    (isOpensNewWindow && (
+      <ShareIcon color={"#4b4848"} height={12} width={12} />
+    ));
 
   const handleClick = (e: React.SyntheticEvent) => {
     setIsPopoverOpen(false);

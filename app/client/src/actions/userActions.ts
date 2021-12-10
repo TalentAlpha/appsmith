@@ -2,7 +2,10 @@ import {
   ReduxActionErrorTypes,
   ReduxActionTypes,
 } from "constants/ReduxActionConstants";
-import { CurrentUserDetailsRequestPayload } from "constants/userConstants";
+import {
+  CommentsOnboardingState,
+  CurrentUserDetailsRequestPayload,
+} from "constants/userConstants";
 import {
   TokenPasswordUpdateRequest,
   UpdateUserRequest,
@@ -67,17 +70,29 @@ export const updateUserDetails = (payload: UpdateUserRequest) => ({
   payload,
 });
 
+export const updateUsersCommentOnboardingState = (
+  payload: CommentsOnboardingState,
+) => ({
+  type: ReduxActionTypes.UPDATE_USERS_COMMENTS_ONBOARDING_STATE,
+  payload,
+});
+
 export const updatePhoto = (payload: {
   file: File;
-  callback?: () => void;
+  callback?: (id: string) => void;
 }) => ({
   type: ReduxActionTypes.UPLOAD_PROFILE_PHOTO,
   payload,
 });
 
-export const removePhoto = (callback: () => void) => ({
+export const removePhoto = (callback: (id: string) => void) => ({
   type: ReduxActionTypes.REMOVE_PROFILE_PHOTO,
   payload: { callback },
+});
+
+export const updatePhotoId = (payload: { photoId: string }) => ({
+  type: ReduxActionTypes.UPDATE_PHOTO_ID,
+  payload,
 });
 
 export const leaveOrganization = (orgId: string) => {

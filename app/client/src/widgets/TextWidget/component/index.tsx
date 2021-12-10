@@ -13,9 +13,30 @@ import {
 export type TextAlign = "LEFT" | "CENTER" | "RIGHT" | "JUSTIFY";
 
 export const TextContainer = styled.div`
-  && {
+  & {
     height: 100%;
     width: 100%;
+  }
+
+  ul {
+    list-style-type: disc;
+    list-style-position: inside;
+  }
+  ol {
+    list-style-type: decimal;
+    list-style-position: inside;
+  }
+  ul ul,
+  ol ul {
+    list-style-type: circle;
+    list-style-position: inside;
+    margin-left: 15px;
+  }
+  ol ol,
+  ul ol {
+    list-style-type: lower-latin;
+    list-style-position: inside;
+    margin-left: 15px;
   }
 `;
 
@@ -61,12 +82,14 @@ export interface TextComponentProps extends ComponentProps {
   backgroundColor?: string;
   textColor?: string;
   fontStyle?: string;
+  disableLink: boolean;
 }
 
 class TextComponent extends React.Component<TextComponentProps> {
   render() {
     const {
       backgroundColor,
+      disableLink,
       ellipsize,
       fontSize,
       fontStyle,
@@ -88,7 +111,11 @@ class TextComponent extends React.Component<TextComponentProps> {
         >
           <Interweave
             content={text}
-            matchers={[new EmailMatcher("email"), new UrlMatcher("url")]}
+            matchers={
+              disableLink
+                ? []
+                : [new EmailMatcher("email"), new UrlMatcher("url")]
+            }
             newWindow
           />
         </StyledText>

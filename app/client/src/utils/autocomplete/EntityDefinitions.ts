@@ -1,7 +1,11 @@
 import { generateTypeDef } from "utils/autocomplete/dataTreeTypeDefCreator";
-import { DataTreeAction } from "entities/DataTree/dataTreeFactory";
+import {
+  DataTreeAction,
+  DataTreeAppsmith,
+} from "entities/DataTree/dataTreeFactory";
 import _ from "lodash";
 import { JSCollection } from "entities/JSCollection";
+import { EVALUATION_PATH } from "utils/DynamicBindingUtils";
 
 const isVisible = {
   "!type": "bool",
@@ -9,6 +13,31 @@ const isVisible = {
 };
 
 export const entityDefinitions: Record<string, unknown> = {
+  APPSMITH: (entity: DataTreeAppsmith) => {
+    const generatedTypeDef = generateTypeDef(
+      _.omit(entity, "ENTITY_TYPE", EVALUATION_PATH),
+    );
+    if (
+      typeof generatedTypeDef === "object" &&
+      typeof generatedTypeDef.geolocation === "object"
+    ) {
+      return {
+        ...generatedTypeDef,
+        geolocation: {
+          ...generatedTypeDef.geolocation,
+          "!doc":
+            "The user's geo location information. Only available when requested",
+          "!url":
+            "https://docs.appsmith.com/v/v1.2.1/framework-reference/geolocation",
+          getCurrentPosition:
+            "fn(onSuccess: fn() -> void, onError: fn() -> void, options: object) -> void",
+          watchPosition: "fn(options: object) -> void",
+          clearWatch: "fn() -> void",
+        },
+      };
+    }
+    return generatedTypeDef;
+  },
   ACTION: (entity: DataTreeAction) => {
     const dataDef = generateTypeDef(entity.data);
     let data: Record<string, any> = {
@@ -32,6 +61,13 @@ export const entityDefinitions: Record<string, unknown> = {
       run: "fn(onSuccess: fn() -> void, onError: fn() -> void) -> void",
       clear: "fn() -> void",
     };
+  },
+  AUDIO_WIDGET: {
+    "!doc":
+      "Audio widget can be used for playing a variety of audio formats like MP3, AAC etc.",
+    "!url": "https://docs.appsmith.com/widget-reference/audio",
+    playState: "number",
+    autoPlay: "bool",
   },
   CONTAINER_WIDGET: {
     "!doc":
@@ -70,6 +106,7 @@ export const entityDefinitions: Record<string, unknown> = {
     "!url": "https://docs.appsmith.com/widget-reference/table",
     selectedRow: generateTypeDef(widget.selectedRow),
     selectedRows: generateTypeDef(widget.selectedRows),
+    triggeredRow: generateTypeDef(widget.triggeredRow),
     selectedRowIndex: "number",
     tableData: generateTypeDef(widget.tableData),
     pageNo: "number",
@@ -280,6 +317,8 @@ export const entityDefinitions: Record<string, unknown> = {
     selectedItem: generateTypeDef(widget.selectedItem),
     items: generateTypeDef(widget.items),
     listData: generateTypeDef(widget.listData),
+    pageNo: generateTypeDef(widget.pageNo),
+    pageSize: generateTypeDef(widget.pageSize),
   }),
   RATE_WIDGET: {
     "!doc": "Rating widget is used to display ratings in your app.",
@@ -314,6 +353,45 @@ export const entityDefinitions: Record<string, unknown> = {
     isVisible: isVisible,
     label: "string",
   },
+  //TODO: fix this after development
+  SINGLE_SELECT_TREE_WIDGET: {
+    "!doc":
+      "TreeSelect is used to capture user input from a specified list of permitted inputs/Nested Inputs.",
+    "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    isVisible: isVisible,
+    selectedOptionValue: {
+      "!type": "string",
+      "!doc": "The value selected in a treeselect dropdown",
+      "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    },
+    selectedOptionLabel: {
+      "!type": "string",
+      "!doc": "The selected option label in a treeselect dropdown",
+      "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    },
+    isDisabled: "bool",
+    isValid: "bool",
+    options: "[dropdownOption]",
+  },
+  MULTI_SELECT_TREE_WIDGET: {
+    "!doc":
+      "Multi TreeSelect is used to capture user inputs from a specified list of permitted inputs/Nested Inputs. A TreeSelect can capture a single choice as well as multiple choices",
+    "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    isVisible: isVisible,
+    selectedOptionValues: {
+      "!type": "[string]",
+      "!doc": "The array of values selected in a treeselect dropdown",
+      "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    },
+    selectedOptionLabels: {
+      "!type": "[string]",
+      "!doc": "The array of selected option labels in a treeselect dropdown",
+      "!url": "https://docs.appsmith.com/widget-reference/treeselect",
+    },
+    isDisabled: "bool",
+    isValid: "bool",
+    options: "[dropdownOption]",
+  },
   ICON_BUTTON_WIDGET: {
     "!doc":
       "Icon button widget is just an icon, along with all other button properties.",
@@ -340,8 +418,15 @@ export const entityDefinitions: Record<string, unknown> = {
       "Audio recorder widget allows users to record using their microphone, listen to the playback, and export the data to a data source.",
     "!url": "https://docs.appsmith.com/widget-reference/recorder",
     isVisible: isVisible,
-    value: "blob",
-    url: "string",
+    blobUrl: "string",
+    dataURL: "string",
+    rawBinary: "string",
+  },
+  SWITCH_GROUP_WIDGET: {
+    "!doc":
+      "Switch group widget allows users to create many switch components which can easily by used in a form",
+    "!url": "https://docs.appsmith.com/widget-reference/switch-group",
+    selectedValues: "[string]",
   },
 };
 
@@ -412,6 +497,14 @@ export const GLOBAL_FUNCTIONS = {
   resetWidget: {
     "!doc": "Reset widget values",
     "!type": "fn(widgetName: string, resetChildren: boolean) -> void",
+  },
+  setInterval: {
+    "!doc": "Execute triggers at a given interval",
+    "!type": "fn(callback: fn, interval: number, id?: string) -> void",
+  },
+  clearInterval: {
+    "!doc": "Stop executing a setInterval with id",
+    "!type": "fn(id: string) -> void",
   },
 };
 

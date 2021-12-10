@@ -4,13 +4,14 @@ import { GRID_DENSITY_MIGRATION_V1 } from "widgets/constants";
 
 export const CONFIG = {
   type: Widget.getWidgetType(),
-  name: "Dropdown",
+  name: "Select",
   iconSVG: IconSVG,
   needsMeta: true,
   defaults: {
-    rows: 1 * GRID_DENSITY_MIGRATION_V1,
-    columns: 4 * GRID_DENSITY_MIGRATION_V1,
-    label: "",
+    rows: 1.725 * GRID_DENSITY_MIGRATION_V1,
+    columns: 5 * GRID_DENSITY_MIGRATION_V1,
+    placeholderText: "Select option",
+    labelText: "Label",
     selectionType: "SINGLE_SELECT",
     options: [
       { label: "Blue", value: "BLUE" },
@@ -21,7 +22,7 @@ export const CONFIG = {
     widgetName: "Select",
     defaultOptionValue: "GREEN",
     version: 1,
-    isFilterable: true,
+    isFilterable: false,
     isRequired: false,
     isDisabled: false,
   },

@@ -47,8 +47,6 @@ import useOrg from "utils/hooks/useOrg";
 import { getCanCreateApplications } from "utils/helpers";
 
 import { getAppsmithConfigs } from "configs";
-import { getCurrentUser } from "selectors/usersSelectors";
-import { User } from "constants/userConstants";
 import { Toaster } from "components/ads/Toast";
 import { Variant } from "components/ads/common";
 
@@ -168,21 +166,16 @@ const sortMentionData = (filter = "") => (a: MentionData, b: MentionData) => {
 const useUserSuggestions = (
   users: Array<OrgUser>,
   setSuggestions: Dispatch<SetStateAction<Array<MentionData>>>,
-  currentUser?: User,
 ) => {
   const { id } = useSelector(getCurrentAppOrg) || {};
   const currentOrg = useOrg(id);
   const canManage = getCanCreateApplications(currentOrg);
 
   useEffect(() => {
-    const result = [] as Array<MentionData>;
-    users.forEach((user) => {
-      if (user?.username !== currentUser?.username)
-        result.push({
-          name: user.name || user.username,
-          user,
-        });
-    });
+    const result: Array<MentionData> = users.map((user) => ({
+      name: user.name || user.username,
+      user,
+    }));
 
     result.sort(sortMentionData());
 
@@ -216,8 +209,7 @@ function AddCommentInput({
   const users = useOrgUsers();
   const [suggestions, setSuggestions] = useState<Array<MentionData>>([]);
   const [trigger, setTrigger] = useState<Trigger>();
-  const currentUser = useSelector(getCurrentUser);
-  useUserSuggestions(users, setSuggestions, currentUser);
+  useUserSuggestions(users, setSuggestions);
   const [editorState, setEditorStateInState] = useState(
     initialEditorState || EditorState.createEmpty(),
   );
@@ -275,6 +267,7 @@ function AddCommentInput({
 
   const filteredSuggestions = useMemo(() => {
     let suggestionResults = suggestions;
+    let hasExactMatch = false;
     if (!suggestionsQuery) return suggestionResults;
     else {
       const filter = suggestionsQuery.toLowerCase();
@@ -282,14 +275,18 @@ function AddCommentInput({
         .filter((suggestion) => {
           const name = suggestion.name.toLowerCase();
           const username = suggestion.user?.username.toLowerCase() || "";
+          hasExactMatch = name === filter || username === filter;
           return name.indexOf(filter) !== -1 || username.indexOf(filter) !== -1;
         })
         .sort(sortMentionData(filter));
     }
-
-    if (suggestionResults.length !== 0) return suggestionResults;
-
-    return [{ name: suggestionsQuery, isInviteTrigger: true }];
+    const couldBeNewEmail = isEmail(suggestionsQuery);
+    const inviteNew = [{ name: suggestionsQuery, isInviteTrigger: true }];
+    // Show invite prompt only if there is no exact match and user has typed email.
+    return [
+      ...suggestionResults,
+      ...(couldBeNewEmail && !hasExactMatch ? inviteNew : []),
+    ];
   }, [suggestionsQuery, suggestions, trigger]);
 
   const onAddMention = (mention: MentionData) => {
@@ -340,6 +337,7 @@ function AddCommentInput({
             <Button
               category={Category.tertiary}
               className={"cancel-button"}
+              data-cy="add-comment-cancel"
               onClick={_onCancel}
               text={createMessage(CANCEL)}
             />

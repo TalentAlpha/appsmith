@@ -118,6 +118,7 @@ class ImageComponent extends React.Component<
     if (zoomActive) {
       cursor = isZoomingIn ? "zoom-in" : "zoom-out";
     }
+    if (this.props.onClick) cursor = "pointer";
     return (
       <Wrapper
         onMouseEnter={this.onMouseEnter}
@@ -191,8 +192,9 @@ class ImageComponent extends React.Component<
                     }
                     this.isPanning = false;
                   }}
+                  // Checking if onClick event is associated, changing cursor to pointer.
                   style={{
-                    cursor,
+                    cursor: cursor,
                     transform: `rotate(${imageRotation}deg)`,
                   }}
                 >
@@ -216,10 +218,16 @@ class ImageComponent extends React.Component<
   }
 
   renderImageControl = () => {
-    const { enableDownload, enableRotation } = this.props;
+    const {
+      defaultImageUrl,
+      enableDownload,
+      enableRotation,
+      imageUrl,
+    } = this.props;
     const { showImageControl } = this.state;
+    const showDownloadBtn = enableDownload && (!!imageUrl || !!defaultImageUrl);
 
-    if (showImageControl && (enableRotation || enableDownload)) {
+    if (showImageControl && (enableRotation || showDownloadBtn)) {
       return (
         <ControlBtnWrapper>
           {enableRotation && (
@@ -265,7 +273,7 @@ class ImageComponent extends React.Component<
               </ControlBtn>
             </>
           )}
-          {enableDownload && (
+          {showDownloadBtn && (
             <ControlBtn onClick={this.handleImageDownload}>
               <div>
                 <svg fill="none" height="20" viewBox="0 0 20 20" width="20">
@@ -298,11 +306,12 @@ class ImageComponent extends React.Component<
   };
 
   handleImageDownload = (e: any) => {
-    const { imageUrl, widgetId } = this.props;
+    const { defaultImageUrl, imageUrl, widgetId } = this.props;
     const fileName = `${widgetId}-download`;
+    const downloadUrl = imageUrl || defaultImageUrl;
 
     const xhr = new XMLHttpRequest();
-    xhr.open("GET", imageUrl, true);
+    xhr.open("GET", downloadUrl, true);
     xhr.responseType = "blob";
 
     xhr.onload = function() {
@@ -319,7 +328,7 @@ class ImageComponent extends React.Component<
     // if download fails open image in new tab
     xhr.onerror = function() {
       const tag = document.createElement("a");
-      tag.href = imageUrl;
+      tag.href = downloadUrl;
       tag.target = "_blank";
       document.body.appendChild(tag);
       tag.click();

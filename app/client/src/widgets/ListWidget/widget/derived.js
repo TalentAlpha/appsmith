@@ -33,7 +33,7 @@ export default {
       let currentItem = JSON.parse(JSON.stringify(item));
       const widgetKeys = Object.keys(currentItem);
 
-      for (var i = 0; i < widgetKeys.length; i++) {
+      for (let i = 0; i < widgetKeys.length; i++) {
         const currentWidgetName = widgetKeys[i];
         let currentWidget = currentItem[currentWidgetName];
         const filteredWidget = {};
@@ -100,10 +100,12 @@ export default {
           }
         });
 
-        currentItem[currentWidgetName] = _.pick(
-          currentWidget,
-          props.childrenEntityDefinitions[currentWidget.type],
-        );
+        if (props.childrenEntityDefinitions) {
+          currentItem[currentWidgetName] = _.pick(
+            currentWidget,
+            props.childrenEntityDefinitions[currentWidget.type],
+          );
+        }
       }
 
       updatedItems[itemIndex] = currentItem;
@@ -112,12 +114,36 @@ export default {
     return updatedItems;
   },
   //
+  getPageSize: (props, moment, _) => {
+    const LIST_WIDGET_PAGINATION_HEIGHT = 36;
+    const DEFAULT_GRID_ROW_HEIGHT = 10;
+    const WIDGET_PADDING = DEFAULT_GRID_ROW_HEIGHT * 0.4;
+
+    const templateBottomRow = props.templateBottomRow;
+
+    const templateHeight = templateBottomRow * DEFAULT_GRID_ROW_HEIGHT;
+
+    const componentHeight =
+      (props.bottomRow - props.topRow) * props.parentRowSpace;
+
+    const totalSpaceAvailable =
+      componentHeight - (LIST_WIDGET_PAGINATION_HEIGHT + WIDGET_PADDING * 2);
+    const spaceTakenByOneContainer = templateHeight + (props.gridGap * 3) / 4;
+
+    const perPage = totalSpaceAvailable / spaceTakenByOneContainer;
+
+    return _.isNaN(perPage) ? 0 : _.floor(perPage);
+  },
+  //
+  // this is just a patch for #7520
   getChildAutoComplete: (props, moment, _) => {
+    const data = [...props.listData];
+
     const structure =
-      Array.isArray(props.listData) && props.listData.length > 0
+      Array.isArray(data) && data.length > 0
         ? Object.assign(
             {},
-            ...Object.keys(props.listData[0]).map((key) => ({
+            ...Object.keys(data[0]).map((key) => ({
               [key]: "",
             })),
           )

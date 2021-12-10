@@ -1,6 +1,9 @@
 import { AppState } from "reducers";
 import { commentModeSelector } from "selectors/commentsSelectors";
-import { snipingModeSelector } from "selectors/editorSelectors";
+import {
+  previewModeSelector,
+  snipingModeSelector,
+} from "selectors/editorSelectors";
 import { useSelector } from "store";
 
 export const useAllowEditorDragToSelect = () => {
@@ -14,6 +17,11 @@ export const useAllowEditorDragToSelect = () => {
     (state: AppState) => state.ui.widgetDragResize.isDragging,
   );
 
+  // This state tells us if it is already dragging for selection
+  const isSelecting = useSelector(
+    (state: AppState) => state.ui.canvasSelection.isDraggingForSelection,
+  );
+
   // This state tells us to disable dragging,
   // This is usually true when widgets themselves implement drag/drop
   // This flag resolves conflicting drag/drop triggers.
@@ -22,13 +30,15 @@ export const useAllowEditorDragToSelect = () => {
   );
 
   // True when any widget is dragging or resizing, including this one
-  const isResizingOrDragging = !!isResizing || !!isDragging;
+  const isResizingOrDragging = !!isResizing || !!isDragging || !!isSelecting;
   const isCommentMode = useSelector(commentModeSelector);
   const isSnipingMode = useSelector(snipingModeSelector);
+  const isPreviewMode = useSelector(previewModeSelector);
   return (
     !isResizingOrDragging &&
     !isDraggingDisabled &&
     !isCommentMode &&
-    !isSnipingMode
+    !isSnipingMode &&
+    !isPreviewMode
   );
 };

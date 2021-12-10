@@ -17,6 +17,17 @@ import { WidgetProps } from "widgets/BaseWidget";
 import { DSLWidget } from "widgets/constants";
 import { getSubstringBetweenTwoWords } from "utils/helpers";
 
+export const isSortableMigration = (currentDSL: DSLWidget) => {
+  currentDSL.children = currentDSL.children?.map((child: WidgetProps) => {
+    if (child.type === "TABLE_WIDGET" && !child.hasOwnProperty("isSortable")) {
+      child["isSortable"] = true;
+    } else if (child.children && child.children.length > 0) {
+      child = isSortableMigration(child);
+    }
+    return child;
+  });
+  return currentDSL;
+};
 export const tableWidgetPropertyPaneMigrations = (currentDSL: DSLWidget) => {
   currentDSL.children = currentDSL.children?.map((_child: WidgetProps) => {
     let child = cloneDeep(_child);
@@ -306,6 +317,54 @@ export const migrateTablePrimaryColumnsComputedValue = (
   return currentDSL;
 };
 
+const getUpdatedColumns = (
+  widgetName: string,
+  columns: Record<string, ColumnProperties>,
+) => {
+  const updatedColumns: Record<string, ColumnProperties> = {};
+  if (columns && Object.keys(columns).length > 0) {
+    for (const [columnId, columnProps] of Object.entries(columns)) {
+      const sanitizedColumnId = removeSpecialChars(columnId, 200);
+      const selectedRowBindingValue = `${widgetName}.selectedRow`;
+      let newOnClickBindingValue = undefined;
+      if (
+        columnProps.onClick &&
+        columnProps.onClick.includes(selectedRowBindingValue)
+      ) {
+        newOnClickBindingValue = columnProps.onClick.replace(
+          selectedRowBindingValue,
+          "currentRow",
+        );
+      }
+      updatedColumns[sanitizedColumnId] = columnProps;
+      if (newOnClickBindingValue)
+        updatedColumns[sanitizedColumnId].onClick = newOnClickBindingValue;
+    }
+  }
+  return updatedColumns;
+};
+
+export const migrateTableWidgetSelectedRowBindings = (
+  currentDSL: DSLWidget,
+) => {
+  currentDSL.children = currentDSL.children?.map((child: WidgetProps) => {
+    if (child.type === "TABLE_WIDGET") {
+      child.derivedColumns = getUpdatedColumns(
+        child.widgetName,
+        child.derivedColumns as Record<string, ColumnProperties>,
+      );
+      child.primaryColumns = getUpdatedColumns(
+        child.widgetName,
+        child.primaryColumns as Record<string, ColumnProperties>,
+      );
+    } else if (child.children && child.children.length > 0) {
+      child = migrateTableWidgetSelectedRowBindings(child);
+    }
+    return child;
+  });
+  return currentDSL;
+};
+
 /**
  * This migration sanitizes the following properties -
  * primaryColumns object key, for the value of each key - id, computedValue are sanitized
@@ -324,9 +383,25 @@ export const migrateTableSanitizeColumnKeys = (currentDSL: DSLWidget) => {
 
       const newPrimaryColumns: Record<string, ColumnProperties> = {};
       if (primaryColumnEntries.length) {
-        for (const [key, value] of primaryColumnEntries) {
+        for (const [, primaryColumnEntry] of primaryColumnEntries.entries()) {
+          // Value is reassigned when its invalid(Faulty DSL  https://github.com/appsmithorg/appsmith/issues/8979)
+          const [key] = primaryColumnEntry;
+          let [, value] = primaryColumnEntry;
           const sanitizedKey = removeSpecialChars(key, 200);
-          const id = removeSpecialChars(value.id, 200);
+          let id = "";
+          if (value.id) {
+            id = removeSpecialChars(value.id, 200);
+          }
+          // When id is undefined it's likely value isn't correct and needs fixing
+          else if (Object.keys(value)) {
+            const onlyKey = Object.keys(value)[0] as keyof ColumnProperties;
+            const obj: ColumnProperties = value[onlyKey] as any;
+            if (!obj.id && !obj.columnType) {
+              continue;
+            }
+            value = obj;
+            id = removeSpecialChars(value.id, 200);
+          }
 
           // Sanitizes "{{Table1.sanitizedTableData.map((currentRow) => ( currentRow.$$$random_header))}}"
           // to "{{Table1.sanitizedTableData.map((currentRow) => ( currentRow._random_header))}}"
@@ -385,5 +460,29 @@ export const migrateTableSanitizeColumnKeys = (currentDSL: DSLWidget) => {
     return child;
   });
 
+  return currentDSL;
+};
+
+export const migrateTableWidgetIconButtonVariant = (currentDSL: DSLWidget) => {
+  currentDSL.children = currentDSL.children?.map((child: WidgetProps) => {
+    if (child.type === "TABLE_WIDGET") {
+      const primaryColumns = child.primaryColumns as Record<
+        string,
+        ColumnProperties
+      >;
+      Object.keys(primaryColumns).forEach((accessor: string) => {
+        const primaryColumn = primaryColumns[accessor];
+
+        if (primaryColumn.columnType === "iconButton") {
+          if (!("buttonVariant" in primaryColumn)) {
+            primaryColumn.buttonVariant = "TERTIARY";
+          }
+        }
+      });
+    } else if (child.children && child.children.length > 0) {
+      child = migrateTableWidgetIconButtonVariant(child);
+    }
+    return child;
+  });
   return currentDSL;
 };

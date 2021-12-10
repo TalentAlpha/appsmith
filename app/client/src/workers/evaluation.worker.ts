@@ -16,14 +16,21 @@ import {
   getSafeToRenderDataTree,
   removeFunctions,
   validateWidgetProperty,
-  getParams,
 } from "./evaluationUtils";
 import DataTreeEvaluator from "workers/DataTreeEvaluator";
-import evaluate from "workers/evaluate";
+import ReplayEntity from "entities/Replay";
+import evaluate, { setupEvaluationEnvironment } from "workers/evaluate";
+import ReplayCanvas from "entities/Replay/ReplayEntity/ReplayCanvas";
+import ReplayEditor from "entities/Replay/ReplayEntity/ReplayEditor";
+import * as log from "loglevel";
+
+const CANVAS = "canvas";
 
 const ctx: Worker = self as any;
 
 let dataTreeEvaluator: DataTreeEvaluator | undefined;
+
+let replayMap: Record<string, ReplayEntity<any>>;
 
 //TODO: Create a more complete RPC setup in the subtree-eval branch.
 function messageEventListener(
@@ -41,7 +48,10 @@ function messageEventListener(
         timeTaken: (endTime - startTime).toFixed(2),
       });
     } catch (e) {
-      console.error(e);
+      log.error(e);
+      // we dont want to log dataTree because it is huge.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { dataTree, ...rest } = requestData;
       ctx.postMessage({
         requestId,
         responseData: {
@@ -49,7 +59,7 @@ function messageEventListener(
             {
               type: EvalErrorTypes.CLONE_ERROR,
               message: e,
-              context: requestData,
+              context: JSON.stringify(rest),
             },
           ],
         },
@@ -63,33 +73,56 @@ ctx.addEventListener(
   "message",
   messageEventListener((method, requestData: any) => {
     switch (method) {
+      case EVAL_WORKER_ACTIONS.SETUP: {
+        setupEvaluationEnvironment();
+        return true;
+      }
       case EVAL_WORKER_ACTIONS.EVAL_TREE: {
-        const { unevalTree, widgetTypeConfigMap } = requestData;
+        const {
+          shouldReplay = true,
+          unevalTree,
+          widgets,
+          widgetTypeConfigMap,
+        } = requestData;
         let dataTree: DataTree = unevalTree;
         let errors: EvalError[] = [];
         let logs: any[] = [];
         let dependencies: DependencyMap = {};
         let evaluationOrder: string[] = [];
         let unEvalUpdates: DataTreeDiff[] = [];
+        let jsUpdates: Record<string, any> = {};
         try {
           if (!dataTreeEvaluator) {
+            replayMap = replayMap || {};
+            replayMap[CANVAS] = new ReplayCanvas(widgets);
             dataTreeEvaluator = new DataTreeEvaluator(widgetTypeConfigMap);
-            dataTree = dataTreeEvaluator.createFirstTree(unevalTree);
+            const dataTreeResponse = dataTreeEvaluator.createFirstTree(
+              unevalTree,
+            );
             evaluationOrder = dataTreeEvaluator.sortedDependencies;
+            dataTree = dataTreeResponse.evalTree;
+            jsUpdates = dataTreeResponse.jsUpdates;
             // We need to clean it to remove any possible functions inside the tree.
             // If functions exist, it will crash the web worker
             dataTree = dataTree && JSON.parse(JSON.stringify(dataTree));
           } else {
             dataTree = {};
+            if (shouldReplay) {
+              replayMap[CANVAS]?.update(widgets);
+            }
             const updateResponse = dataTreeEvaluator.updateDataTree(unevalTree);
             evaluationOrder = updateResponse.evaluationOrder;
             unEvalUpdates = updateResponse.unEvalUpdates;
             dataTree = JSON.parse(JSON.stringify(dataTreeEvaluator.evalTree));
+            jsUpdates = updateResponse.jsUpdates;
           }
           dependencies = dataTreeEvaluator.inverseDependencyMap;
           errors = dataTreeEvaluator.errors;
           dataTreeEvaluator.clearErrors();
           logs = dataTreeEvaluator.logs;
+          if (replayMap[CANVAS]?.logs)
+            logs = logs.concat(replayMap[CANVAS]?.logs);
+          replayMap[CANVAS]?.clearLogs();
           dataTreeEvaluator.clearLogs();
         } catch (e) {
           if (dataTreeEvaluator !== undefined) {
@@ -101,7 +134,7 @@ ctx.addEventListener(
               type: EvalErrorTypes.UNKNOWN_ERROR,
               message: e.message,
             });
-            console.error(e);
+            log.error(e);
           }
           dataTree = getSafeToRenderDataTree(unevalTree, widgetTypeConfigMap);
           dataTreeEvaluator = undefined;
@@ -113,6 +146,7 @@ ctx.addEventListener(
           evaluationOrder,
           logs,
           unEvalUpdates,
+          jsUpdates,
         };
       }
       case EVAL_WORKER_ACTIONS.EVAL_ACTION_BINDINGS: {
@@ -163,6 +197,7 @@ ctx.addEventListener(
           fullPropertyPath,
         );
         const cleanTriggers = removeFunctions(triggers);
+        const cleanResult = removeFunctions(result);
         // Transforming eval errors into eval trigger errors. Since trigger
         // errors occur less, we want to treat it separately
         const errors = evalErrors
@@ -174,7 +209,7 @@ ctx.addEventListener(
             message: error.errorMessage,
             type: EvalErrorTypes.EVAL_TRIGGER_ERROR,
           }));
-        return { triggers: cleanTriggers, errors, result };
+        return { triggers: cleanTriggers, errors, result: cleanResult };
       }
       case EVAL_WORKER_ACTIONS.CLEAR_CACHE: {
         dataTreeEvaluator = undefined;
@@ -202,57 +237,19 @@ ctx.addEventListener(
           validateWidgetProperty(validation, value, props),
         );
       }
-      case EVAL_WORKER_ACTIONS.PARSE_JS_FUNCTION_BODY: {
-        const { body, jsAction } = requestData;
-        const regex = new RegExp(/^export default[\s]*?({[\s\S]*?})/);
-
-        if (!dataTreeEvaluator) {
-          return true;
-        }
-        try {
-          const correctFormat = regex.test(body);
-          if (correctFormat) {
-            const toBeParsedBody = body.replace(/export default/g, "");
-            const parsed = body && eval("(" + toBeParsedBody + ")");
-            const parsedLength = Object.keys(parsed).length;
-            const actions = [];
-            const variables = [];
-            if (parsedLength > 0) {
-              for (const key in parsed) {
-                if (parsed.hasOwnProperty(key)) {
-                  if (typeof parsed[key] === "function") {
-                    const value = parsed[key];
-                    const params = getParams(value);
-                    actions.push({
-                      name: key,
-                      body: parsed[key].toString(),
-                      arguments: params,
-                    });
-                  } else {
-                    variables.push({
-                      name: key,
-                      value: parsed[key],
-                    });
-                  }
-                }
-              }
-            }
-            return {
-              actions: actions,
-              variables: variables,
-            };
-          } else {
-            throw new Error("syntax error");
-          }
-        } catch (e) {
-          const errors = dataTreeEvaluator.errors;
-          errors.push({
-            type: EvalErrorTypes.PARSE_JS_ERROR,
-            message: e.message,
-            context: jsAction,
-          });
-          return errors;
-        }
+      case EVAL_WORKER_ACTIONS.UNDO: {
+        const { entityId } = requestData;
+        if (!replayMap[entityId || CANVAS]) return;
+        const replayResult = replayMap[entityId || CANVAS].replay("UNDO");
+        replayMap[entityId || CANVAS].clearLogs();
+        return replayResult;
+      }
+      case EVAL_WORKER_ACTIONS.REDO: {
+        const { entityId } = requestData;
+        if (!replayMap[entityId ?? CANVAS]) return;
+        const replayResult = replayMap[entityId ?? CANVAS].replay("REDO");
+        replayMap[entityId ?? CANVAS].clearLogs();
+        return replayResult;
       }
       case EVAL_WORKER_ACTIONS.EVAL_JS_FUNCTION: {
         const { action, collectionName } = requestData;
@@ -279,8 +276,21 @@ ctx.addEventListener(
         return isTrigger
           ? evaluate(expression, evalTree, {}, [], true)
           : evaluate(expression, evalTree, {});
+      case EVAL_WORKER_ACTIONS.UPDATE_REPLAY_OBJECT:
+        const { entity, entityId, entityType } = requestData;
+        const replayObject = replayMap[entityId];
+        if (replayObject) {
+          replayObject.update(entity);
+        } else {
+          replayMap[entityId] = new ReplayEditor(entity, entityType);
+        }
+        break;
+      case EVAL_WORKER_ACTIONS.SET_EVALUATION_VERSION:
+        const { version } = requestData;
+        self.evaluationVersion = version || 1;
+        break;
       default: {
-        console.error("Action not registered on worker", method);
+        log.error("Action not registered on worker", method);
       }
     }
   }),

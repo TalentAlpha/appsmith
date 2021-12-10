@@ -4,30 +4,45 @@ import Dropdown, { DropdownOption } from "components/ads/Dropdown";
 import { CurrencyTypeOptions, CurrencyOptionProps } from "constants/Currency";
 import Icon, { IconSize } from "components/ads/Icon";
 import { countryToFlag } from "./utilities";
+import { Colors } from "constants/Colors";
 
 const DropdownTriggerIconWrapper = styled.div`
   height: 19px;
   padding: 9px 5px 9px 12px;
-  width: 40px;
   height: 19px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 14px;
-  line-height: 19px;
+  line-height: 18px;
   letter-spacing: -0.24px;
   color: #090707;
+  > * {
+    margin-left: 5px;
+  }
+
+  .dropdown {
+    svg {
+      width: 14px;
+      height: 14px;
+
+      path {
+        fill: ${Colors.GREY_10} !important;
+      }
+    }
+  }
 `;
 
 const CurrencyIconWrapper = styled.span`
   height: 100%;
-  padding: 6px 4px 6px 12px;
-  width: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0px 4px 0px 12px;
   position: absolute;
   left: 0;
   z-index: 16;
   font-size: 14px;
-  line-height: 19px;
+  line-height: 18px;
   letter-spacing: -0.24px;
   color: #090707;
 `;
@@ -87,18 +102,18 @@ export default function CurrencyTypeDropdown(props: CurrencyDropdownProps) {
   const dropdownTriggerIcon = (
     <DropdownTriggerIconWrapper className="t--input-currency-change">
       {selectedCurrency}
-      <Icon name="downArrow" size={IconSize.XXS} />
+      <Icon className="dropdown" name="downArrow" size={IconSize.XXS} />
     </DropdownTriggerIconWrapper>
   );
   return (
     <Dropdown
       containerClassName="currency-type-filter"
-      dropdownHeight="195px"
+      dropdownHeight="139px"
       dropdownTriggerIcon={dropdownTriggerIcon}
       enableSearch
-      height="32px"
+      height="36px"
       onSelect={props.onCurrencyTypeChange}
-      optionWidth="260px"
+      optionWidth="340px"
       options={props.options}
       searchPlaceholder="Search by currency or country"
       selected={props.selected}

@@ -56,7 +56,6 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
             validation: {
               type: ValidationTypes.OBJECT,
               params: {
-                required: true,
                 allowedKeys: [
                   {
                     name: "lat",
@@ -88,7 +87,7 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
             controlType: "INPUT_TEXT",
             inputType: "ARRAY",
             helpText: "Sets the default markers on the map",
-            placeholderText: 'Enter [{ "lat": "val1", "long": "val2" }]',
+            placeholderText: '[{ "lat": "val1", "long": "val2" }]',
             isBindProperty: true,
             isTriggerProperty: false,
             validation: {
@@ -132,9 +131,18 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
               EvaluationSubstitutionType.SMART_SUBSTITUTE,
           },
           {
+            propertyName: "isClickedMarkerCentered",
+            label: "Map & Marker centering",
+            helpText:
+              "Controls whether the clicked marker is centered on the map",
+            controlType: "SWITCH",
+            isBindProperty: false,
+            isTriggerProperty: false,
+          },
+          {
             propertyName: "enableSearch",
             label: "Enable search location",
-            helpText: "Enables locaton search",
+            helpText: "Allows a user to search for a location",
             controlType: "SWITCH",
             isBindProperty: false,
             isTriggerProperty: false,
@@ -156,15 +164,6 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
             isTriggerProperty: false,
           },
           {
-            propertyName: "zoomLevel",
-            label: "Zoom Level",
-            controlType: "STEP",
-            helpText: "Changes the default zoom of the map",
-            stepType: "ZOOM_PERCENTAGE",
-            isBindProperty: false,
-            isTriggerProperty: false,
-          },
-          {
             propertyName: "isVisible",
             label: "Visible",
             helpText: "Controls the visibility of the widget",
@@ -174,10 +173,19 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
             isTriggerProperty: false,
             validation: { type: ValidationTypes.BOOLEAN },
           },
+          {
+            propertyName: "zoomLevel",
+            label: "Zoom Level",
+            controlType: "STEP",
+            helpText: "Changes the default zoom of the map",
+            stepType: "ZOOM_PERCENTAGE",
+            isBindProperty: false,
+            isTriggerProperty: false,
+          },
         ],
       },
       {
-        sectionName: "Actions",
+        sectionName: "Events",
         children: [
           {
             propertyName: "onMarkerClick",
@@ -317,6 +325,7 @@ class MapWidget extends BaseWidget<MapWidgetProps, WidgetState> {
             allowZoom={this.props.allowZoom}
             apiKey={google.apiKey}
             center={this.getCenter()}
+            clickedMarkerCentered={this.props.isClickedMarkerCentered}
             enableCreateMarker={this.props.enableCreateMarker}
             enableDrag={this.enableDrag}
             enablePickLocation={this.props.enablePickLocation}

@@ -57,7 +57,7 @@ export const dataTreeTypeDefCreator = (
         subType: "ACTION",
       });
     } else if (isAppsmithEntity(entity)) {
-      def.appsmith = generateTypeDef(_.omit(entity, "ENTITY_TYPE"));
+      def.appsmith = (entityDefinitions.APPSMITH as any)(entity);
       entityMap.set("appsmith", {
         type: ENTITY_TYPE.APPSMITH,
         subType: ENTITY_TYPE.APPSMITH,
@@ -73,7 +73,7 @@ export const dataTreeTypeDefCreator = (
       for (let i = 0; i < entity.variables.length; i++) {
         const varKey = entity.variables[i];
         const varValue = entity[varKey];
-        jsOptions[varKey] = generateTypeDef(JSON.parse(varValue));
+        jsOptions[varKey] = generateTypeDef(varValue);
       }
 
       def[entityName] = jsOptions;
