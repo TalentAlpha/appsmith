@@ -54,7 +54,7 @@ const Container = styled.div`
 const BodyContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: calc(100% - 18px);
+  height: 100%;
 `;
 
 const CloseBtnContainer = styled.div`
@@ -68,7 +68,7 @@ const ButtonContainer = styled.div`
 `;
 
 const ApplicationWrapper = styled.div`
-  margin-top: ${(props) => props.theme.spaces[7]}px;
+  margin-bottom: ${(props) => props.theme.spaces[7]}px;
   display: flex;
   justify-content: space-between;
 `;
@@ -82,7 +82,8 @@ const StyledDialog = styled(Dialog)`
     margin-top: 0;
   }
 const AppListContainer = styled.div`
-  height: 160px;
+  height: calc(100% - 40px);
+  margin-top: 16px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
@@ -165,12 +166,13 @@ function RepoLimitExceededErrorModal() {
   };
 
   return (
-    <StyledDialog
+    <Dialog
       canEscapeKeyClose
       canOutsideClickClose
       className="t--git-repo-limited-modal"
       isOpen={isOpen}
       maxWidth={"900px"}
+      noModalBodyMarginTop
       onClose={onClose}
       width={"550px"}
     >
@@ -298,7 +300,7 @@ function RepoLimitExceededErrorModal() {
           />
         </CloseBtnContainer>
       </Container>
-    </StyledDialog>
+    </Dialog>
   );
 }
 
