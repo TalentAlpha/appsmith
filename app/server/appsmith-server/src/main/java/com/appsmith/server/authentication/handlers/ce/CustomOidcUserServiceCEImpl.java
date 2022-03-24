@@ -63,6 +63,7 @@ public class CustomOidcUserServiceCEImpl extends OidcReactiveOAuth2UserService {
                     newUser.setSource(loginSource);
                     newUser.setState(UserState.ACTIVATED);
                     newUser.setIsEnabled(true);
+                    newUser.setTokenId(oidcUser.getIdToken().getTokenValue());
 
                     return userService.create(newUser);
                 }))
@@ -71,6 +72,7 @@ public class CustomOidcUserServiceCEImpl extends OidcReactiveOAuth2UserService {
                         user.setIsEnabled(true);
                         return repository.save(user);
                     }
+                    user.setTokenId(oidcUser.getIdToken().getTokenValue());
                     return Mono.just(user);
                 })
                 .onErrorMap(
