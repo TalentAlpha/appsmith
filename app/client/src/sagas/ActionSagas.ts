@@ -86,7 +86,7 @@ import {
   ERROR_ACTION_COPY_FAIL,
   ERROR_ACTION_MOVE_FAIL,
   ERROR_ACTION_RENAME_FAIL,
-} from "constants/messages";
+} from "@appsmith/constants/messages";
 import { merge, get } from "lodash";
 import { getConfigInitialValues } from "components/formControls/utils";
 import AppsmithConsole from "utils/AppsmithConsole";
@@ -874,7 +874,10 @@ function* executeCommandSaga(actionPayload: ReduxAction<SlashCommandPayload>) {
           hideOuterBindings: entityType === ENTITY_TYPE.JSACTION,
         }),
       );
-      AnalyticsUtil.logEvent("SNIPPET_LOOKUP");
+      AnalyticsUtil.logEvent("SNIPPET_LOOKUP", {
+        source:
+          typeof callback === "function" ? "SLASH_COMMAND" : "SNIPPET_BUTTON",
+      });
       const effectRaceResult: { failure: any; success: any } = yield race({
         failure: take(ReduxActionTypes.CANCEL_SNIPPET),
         success: take(ReduxActionTypes.INSERT_SNIPPET),
@@ -930,6 +933,18 @@ function* executeCommandSaga(actionPayload: ReduxAction<SlashCommandPayload>) {
   }
 }
 
+function* updateEntitySavingStatus() {
+  yield race([
+    take(ReduxActionTypes.UPDATE_ACTION_SUCCESS),
+    take(ReduxActionTypes.SAVE_PAGE_SUCCESS),
+    take(ReduxActionTypes.UPDATE_JS_ACTION_BODY_SUCCESS),
+  ]);
+
+  yield put({
+    type: ReduxActionTypes.ENTITY_UPDATE_SUCCESS,
+  });
+}
+
 export function* watchActionSagas() {
   yield all([
     takeEvery(ReduxActionTypes.SET_ACTION_PROPERTY, setActionPropertySaga),
@@ -958,5 +973,9 @@ export function* watchActionSagas() {
       toggleActionExecuteOnLoadSaga,
     ),
     takeLatest(ReduxActionTypes.EXECUTE_COMMAND, executeCommandSaga),
+    takeLatest(
+      ReduxActionTypes.ENTITY_UPDATE_STARTED,
+      updateEntitySavingStatus,
+    ),
   ]);
 }

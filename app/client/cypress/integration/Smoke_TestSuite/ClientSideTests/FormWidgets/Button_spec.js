@@ -1,7 +1,7 @@
 const widgetsPage = require("../../../../locators/Widgets.json");
 const commonlocators = require("../../../../locators/commonlocators.json");
 const dsl = require("../../../../fixtures/newFormDsl.json");
-const homePage = require("../../../../locators/HomePage.json");
+import homePage from "../../../../locators/HomePage";
 const pages = require("../../../../locators/Pages.json");
 const publishPage = require("../../../../locators/publishWidgetspage.json");
 const modalWidgetPage = require("../../../../locators/ModalWidget.json");
@@ -147,6 +147,13 @@ describe("Button Widget Functionality", function() {
     cy.testJsontext("visible", "true");
     cy.PublishtheApp();
     cy.get(publishPage.buttonWidget).should("be.visible");
+  });
+
+  it("Button-Check recaptcha type can be selected", function() {
+    cy.selectDropdownValue(commonlocators.recaptchaVersion, "reCAPTCHA v2");
+    cy.get(commonlocators.recaptchaVersion)
+      .last()
+      .should("have.text", "reCAPTCHA v2");
   });
 
   it("Button-Copy Verification", function() {

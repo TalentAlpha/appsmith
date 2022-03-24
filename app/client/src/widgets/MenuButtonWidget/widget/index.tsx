@@ -162,7 +162,17 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
                       propertyName: "iconAlign",
                       label: "Icon alignment",
                       helpText: "Sets the icon alignment of a menu item",
-                      controlType: "ICON_ALIGN",
+                      controlType: "ICON_TABS",
+                      options: [
+                        {
+                          icon: "VERTICAL_LEFT",
+                          value: "left",
+                        },
+                        {
+                          icon: "VERTICAL_RIGHT",
+                          value: "right",
+                        },
+                      ],
                       isBindProperty: false,
                       isTriggerProperty: false,
                       validation: { type: ValidationTypes.TEXT },
@@ -202,6 +212,17 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             helpText: "Controls the visibility of the widget",
             label: "Visible",
             controlType: "SWITCH",
+            isJSConvertible: true,
+            isBindProperty: true,
+            isTriggerProperty: false,
+            validation: { type: ValidationTypes.BOOLEAN },
+          },
+          {
+            propertyName: "animateLoading",
+            label: "Animate Loading",
+            controlType: "SWITCH",
+            helpText: "Controls the loading of the widget",
+            defaultValue: true,
             isJSConvertible: true,
             isBindProperty: true,
             isTriggerProperty: false,
@@ -336,6 +357,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
               }
               return propertiesToUpdate;
             },
+            dependencies: ["iconAlign"],
             validation: {
               type: ValidationTypes.TEXT,
             },
@@ -379,7 +401,17 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
             propertyName: "iconAlign",
             label: "Icon Alignment",
             helpText: "Sets the icon alignment of the menu button",
-            controlType: "ICON_ALIGN",
+            controlType: "ICON_TABS",
+            options: [
+              {
+                icon: "VERTICAL_LEFT",
+                value: "left",
+              },
+              {
+                icon: "VERTICAL_RIGHT",
+                value: "right",
+              },
+            ],
             isBindProperty: false,
             isTriggerProperty: false,
             validation: {
@@ -415,6 +447,7 @@ class MenuButtonWidget extends BaseWidget<MenuButtonWidgetProps, WidgetState> {
         {...this.props}
         menuDropDownWidth={menuDropDownWidth}
         onItemClicked={this.menuItemClickHandler}
+        renderMode={this.props.renderMode}
         width={componentWidth}
       />
     );

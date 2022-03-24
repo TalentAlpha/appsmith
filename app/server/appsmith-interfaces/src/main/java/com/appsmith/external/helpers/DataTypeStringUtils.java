@@ -5,6 +5,7 @@ import com.appsmith.external.constants.DisplayDataType;
 import com.appsmith.external.exceptions.pluginExceptions.AppsmithPluginError;
 import com.appsmith.external.exceptions.pluginExceptions.AppsmithPluginException;
 import com.appsmith.external.models.ParsedDataType;
+import com.appsmith.external.plugins.SmartSubstitutionInterface;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -64,7 +65,7 @@ public class DataTypeStringUtils {
             return DataType.NULL;
         }
 
-        input = input.trim();
+        String strNumericValue = input.trim().replaceAll(",", "");
 
         if (input.startsWith("[") && input.endsWith("]")) {
             String betweenBraces = input.substring(1, input.length() - 1);
@@ -78,28 +79,28 @@ public class DataTypeStringUtils {
         }
 
         try {
-            Integer.parseInt(input);
+            Integer.parseInt(strNumericValue);
             return DataType.INTEGER;
         } catch (NumberFormatException e) {
             // Not an integer
         }
 
         try {
-            Long.parseLong(input);
+            Long.parseLong(strNumericValue);
             return DataType.LONG;
         } catch (NumberFormatException e1) {
             // Not long
         }
 
         try {
-            Float.parseFloat(input);
+            Float.parseFloat(strNumericValue);
             return DataType.FLOAT;
         } catch (NumberFormatException e2) {
             // Not float
         }
 
         try {
-            Double.parseDouble(input);
+            Double.parseDouble(strNumericValue);
             return DataType.DOUBLE;
         } catch (NumberFormatException e3) {
             // Not double
@@ -186,15 +187,35 @@ public class DataTypeStringUtils {
         return DataType.STRING;
     }
 
+    /**
+     *
+     * @param input input string which has a mustache expression that will be substituted by the replacement value
+     * @param replacement value that needs to be substituted in place of mustache expression
+     * @param replacementDataType nullable DataType that is used to provide Plugin Specific types, by setting this
+     *                            you can override the 'DataTypeStringUtils.stringToKnownDataTypeConverter(replacement)'
+     *                            default behavior.
+     * @param insertedParams keeps a list of tuple (replacement, data_type)
+     * @param smartSubstitutionUtils provides entry to plugin specific post-processing logic applied to replacement
+     *                               value before the final substitution happens
+     * @return
+     */
     public static String jsonSmartReplacementPlaceholderWithValue(String input,
                                                                   String replacement,
-                                                                  List<Map.Entry<String, String>> insertedParams) {
+                                                                  DataType replacementDataType,
+                                                                  List<Map.Entry<String, String>> insertedParams,
+                                                                  SmartSubstitutionInterface smartSubstitutionUtils) {
 
-        DataType dataType = DataTypeStringUtils.stringToKnownDataTypeConverter(replacement);
+        final DataType dataType;
+        if (replacementDataType == null) {
+            dataType = DataTypeStringUtils.stringToKnownDataTypeConverter(replacement);
+        } else {
+            dataType = replacementDataType;
+        }
 
         Map.Entry<String, String> parameter = new SimpleEntry<>(replacement, dataType.toString());
         insertedParams.add(parameter);
 
+        String updatedReplacement;
         switch (dataType) {
             case INTEGER:
             case LONG:
@@ -202,12 +223,12 @@ public class DataTypeStringUtils {
             case DOUBLE:
             case NULL:
             case BOOLEAN:
-                input = placeholderPattern.matcher(input).replaceFirst(String.valueOf(replacement));
+                updatedReplacement = String.valueOf(replacement);
                 break;
             case ARRAY:
                 try {
                     JSONArray jsonArray = (JSONArray) parser.parse(replacement);
-                    input = placeholderPattern.matcher(input).replaceFirst(String.valueOf(objectMapper.writeValueAsString(jsonArray)));
+                    updatedReplacement = String.valueOf(objectMapper.writeValueAsString(jsonArray));
                 } catch (net.minidev.json.parser.ParseException | JsonProcessingException e) {
                     throw Exceptions.propagate(
                             new AppsmithPluginException(
@@ -223,7 +244,7 @@ public class DataTypeStringUtils {
                     JSONObject jsonObject = (JSONObject) parser.parse(replacement);
                     String jsonString = String.valueOf(objectMapper.writeValueAsString(jsonObject));
                     // Adding Matcher.quoteReplacement so that "/" and "$" in the string are escaped during replacement
-                    input = placeholderPattern.matcher(input).replaceFirst(Matcher.quoteReplacement(jsonString));
+                    updatedReplacement = Matcher.quoteReplacement(jsonString);
                 } catch (net.minidev.json.parser.ParseException | JsonProcessingException e) {
                     throw Exceptions.propagate(
                             new AppsmithPluginException(
@@ -235,7 +256,16 @@ public class DataTypeStringUtils {
                 }
                 break;
             case BSON:
-                input = placeholderPattern.matcher(input).replaceFirst(Matcher.quoteReplacement(replacement));
+                updatedReplacement = Matcher.quoteReplacement(replacement);
+                break;
+            case BSON_SPECIAL_DATA_TYPES:
+                /**
+                 * For this data type the replacement logic is handled via `sanitizeReplacement(...)` method.
+                 * Usually usage of special Mongo data types like `ObjectId` or `ISODate` falls into this category
+                 * (if it does not get detected as BSON). For complete list please check out `MongoSpecialDataTypes
+                 * .java`.
+                 */
+                updatedReplacement = replacement;
                 break;
             case DATE:
             case TIME:
@@ -246,7 +276,7 @@ public class DataTypeStringUtils {
             default:
                 try {
                     String valueAsString = objectMapper.writeValueAsString(replacement);
-                    input = placeholderPattern.matcher(input).replaceFirst(Matcher.quoteReplacement(valueAsString));
+                    updatedReplacement = Matcher.quoteReplacement(valueAsString);
                 } catch (JsonProcessingException e) {
                     throw Exceptions.propagate(
                             new AppsmithPluginException(
@@ -258,6 +288,11 @@ public class DataTypeStringUtils {
                 }
         }
 
+        if (smartSubstitutionUtils != null) {
+            updatedReplacement = smartSubstitutionUtils.sanitizeReplacement(updatedReplacement, dataType);
+        }
+
+        input = placeholderPattern.matcher(input).replaceFirst(updatedReplacement);
         return input;
     }
 

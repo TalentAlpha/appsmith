@@ -15,7 +15,7 @@ import {
   ReduxActionTypes,
   ReduxActionWithoutPayload,
 } from "constants/ReduxActionConstants";
-import { ERROR_CODES } from "constants/ApiConstants";
+import { ERROR_CODES } from "@appsmith/constants/ApiConstants";
 
 import {
   fetchPage,
@@ -60,10 +60,13 @@ import { addBranchParam, BUILDER_PAGE_URL } from "constants/routes";
 import history from "utils/history";
 import {
   fetchGitStatusInit,
+  remoteUrlInputValue,
   resetPullMergeStatus,
   updateBranchLocally,
 } from "actions/gitSyncActions";
 import { getCurrentGitBranch } from "selectors/gitSyncSelectors";
+import { enableGuidedTour } from "actions/onboardingActions";
+import { setPreviewModeAction } from "actions/editorActions";
 
 function* failFastApiCalls(
   triggerActions: Array<ReduxAction<unknown> | ReduxActionWithoutPayload>,
@@ -105,7 +108,7 @@ function* initializeEditorSaga(
   yield put(resetEditorSuccess());
   const { applicationId, branch, pageId } = initializeEditorAction.payload;
   try {
-    if (branch) yield put(updateBranchLocally(branch));
+    yield put(updateBranchLocally(branch || ""));
 
     PerformanceTracker.startAsyncTracking(
       PerformanceTransactionName.INIT_EDIT_APP,
@@ -125,7 +128,6 @@ function* initializeEditorSaga(
       }),
       fetchPageList({ applicationId }, APP_MODE.EDIT),
     ];
-
     const successEffects = [
       ReduxActionTypes.FETCH_APPLICATION_SUCCESS,
       ReduxActionTypes.FETCH_PAGE_LIST_SUCCESS,
@@ -135,12 +137,6 @@ function* initializeEditorSaga(
       ReduxActionErrorTypes.FETCH_APPLICATION_ERROR,
       ReduxActionErrorTypes.FETCH_PAGE_LIST_ERROR,
     ];
-    const jsActionsCall = yield failFastApiCalls(
-      [fetchJSCollections({ applicationId })],
-      [ReduxActionTypes.FETCH_JS_ACTIONS_SUCCESS],
-      [ReduxActionErrorTypes.FETCH_JS_ACTIONS_ERROR],
-    );
-    if (!jsActionsCall) return;
     if (pageId) {
       initCalls.push(fetchPage(pageId, true) as any);
       successEffects.push(ReduxActionTypes.FETCH_PAGE_SUCCESS);
@@ -154,6 +150,34 @@ function* initializeEditorSaga(
     );
 
     if (!applicationAndLayoutCalls) return;
+
+    const initActionsCalls = [
+      fetchActions({ applicationId }, []),
+      fetchJSCollections({ applicationId }),
+    ];
+
+    const successActionEffects = [
+      ReduxActionTypes.FETCH_JS_ACTIONS_SUCCESS,
+      ReduxActionTypes.FETCH_ACTIONS_SUCCESS,
+    ];
+    const failureActionEffects = [
+      ReduxActionErrorTypes.FETCH_JS_ACTIONS_ERROR,
+      ReduxActionErrorTypes.FETCH_ACTIONS_ERROR,
+    ];
+    const allActionCalls = yield failFastApiCalls(
+      initActionsCalls,
+      successActionEffects,
+      failureActionEffects,
+    );
+
+    if (!allActionCalls) {
+      return;
+    } else {
+      yield put({
+        type: ReduxActionTypes.FETCH_PLUGIN_AND_JS_ACTIONS_SUCCESS,
+      });
+      yield put(executePageLoadActions());
+    }
 
     let fetchPageCallResult;
     const defaultPageId = yield select(getDefaultPageId);
@@ -192,13 +216,6 @@ function* initializeEditorSaga(
     );
     if (!pluginFormCall) return;
 
-    const actionsCall = yield failFastApiCalls(
-      [fetchActions({ applicationId }, [executePageLoadActions()])],
-      [ReduxActionTypes.FETCH_ACTIONS_SUCCESS],
-      [ReduxActionErrorTypes.FETCH_ACTIONS_ERROR],
-    );
-    if (!actionsCall) return;
-
     const currentApplication = yield select(getCurrentApplication);
     const appName = currentApplication ? currentApplication.name : "";
     const appId = currentApplication ? currentApplication.id : "";
@@ -217,6 +234,9 @@ function* initializeEditorSaga(
       appId: appId,
       appName: appName,
     });
+
+    // init of temporay remote url from old application
+    yield put(remoteUrlInputValue({ tempRemoteUrl: "" }));
 
     yield put({
       type: ReduxActionTypes.INITIALIZE_EDITOR_SUCCESS,
@@ -372,8 +392,15 @@ export function* initializeAppViewerSaga(
 }
 
 function* resetEditorSaga() {
-  yield put(resetEditorSuccess());
   yield put(resetRecentEntities());
+  // End guided tour once user exits editor
+  yield put(enableGuidedTour(false));
+  // Reset to edit mode once user exits editor
+  // Without doing this if the user creates a new app they
+  // might end up in preview mode if they were in preview mode
+  // previously
+  yield put(setPreviewModeAction(false));
+  yield put(resetEditorSuccess());
 }
 
 export function* waitForInit() {

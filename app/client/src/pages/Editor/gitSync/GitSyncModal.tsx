@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import Dialog from "components/ads/DialogComponent";
 import {
   getActiveGitSyncModalTab,
+  getIsGitConnected,
   getIsGitSyncModalOpen,
 } from "selectors/gitSyncSelectors";
 import { useDispatch, useSelector } from "react-redux";
-import { useCallback } from "react";
 import { setIsGitSyncModalOpen } from "actions/gitSyncActions";
 import Menu from "./Menu";
 import { Classes, MENU_HEIGHT, MENU_ITEM, MENU_ITEMS_MAP } from "./constants";
@@ -18,7 +18,7 @@ import GitErrorPopup from "./components/GitErrorPopup";
 import styled, { useTheme } from "styled-components";
 import { get } from "lodash";
 import { GitSyncModalTab } from "entities/GitSync";
-import { getIsGitConnected } from "selectors/gitSyncSelectors";
+import AnalyticsUtil from "utils/AnalyticsUtil";
 
 const Container = styled.div`
   height: 600px;
@@ -27,7 +27,6 @@ const Container = styled.div`
   flex-direction: column;
   position: relative;
   overflow-y: hidden;
-  padding: 0px 10px 0px 10px;
 `;
 
 const BodyContainer = styled.div`
@@ -41,11 +40,19 @@ const MenuContainer = styled.div`
 
 const CloseBtnContainer = styled.div`
   position: absolute;
-  right: ${(props) => props.theme.spaces[1]}px;
-  top: ${(props) => props.theme.spaces[5]}px;
+  right: 0;
+  top: 0;
 
   padding: ${(props) => props.theme.spaces[1]}px;
   border-radius: ${(props) => props.theme.radii[1]}px;
+`;
+
+const GitSyncTabsContainer = styled.div``;
+
+const StyledDialog = styled(Dialog)`
+  &.${Classes.GIT_SYNC_MODAL} .bp3-dialog-body {
+    margin-top: 0;
+  }
 `;
 
 const ComponentsByTab = {
@@ -55,6 +62,9 @@ const ComponentsByTab = {
 };
 
 const allMenuOptions = Object.values(MENU_ITEMS_MAP);
+const TabKeys: string[] = Object.values(GitSyncModalTab)
+  .filter((value) => typeof value === "string")
+  .map((value) => value as string);
 
 function GitSyncModal() {
   const theme = useTheme();
@@ -69,7 +79,7 @@ function GitSyncModal() {
 
   const setActiveTabIndex = useCallback(
     (index: number) =>
-      dispatch(setIsGitSyncModalOpen({ isOpen: !!isModalOpen, tab: index })),
+      dispatch(setIsGitSyncModalOpen({ isOpen: isModalOpen, tab: index })),
     [dispatch, setIsGitSyncModalOpen, isModalOpen],
   );
 
@@ -109,8 +119,8 @@ function GitSyncModal() {
   const BodyComponent = ComponentsByTab[activeMenuItemKey];
 
   return (
-    <>
-      <Dialog
+    <GitSyncTabsContainer>
+      <StyledDialog
         canEscapeKeyClose
         canOutsideClickClose
         className={Classes.GIT_SYNC_MODAL}
@@ -123,14 +133,28 @@ function GitSyncModal() {
           <MenuContainer>
             <Menu
               activeTabIndex={activeTabIndex}
-              onSelect={setActiveTabIndex}
+              onSelect={(tabIndex: number) => {
+                if (tabIndex === GitSyncModalTab.DEPLOY) {
+                  AnalyticsUtil.logEvent("GS_DEPLOY_GIT_MODAL_TRIGGERED", {
+                    source: `${TabKeys[activeTabIndex]}_TAB`,
+                  });
+                } else if (tabIndex === GitSyncModalTab.MERGE) {
+                  AnalyticsUtil.logEvent("GS_MERGE_GIT_MODAL_TRIGGERED", {
+                    source: `${TabKeys[activeTabIndex]}_TAB`,
+                  });
+                }
+                setActiveTabIndex(tabIndex);
+              }}
               options={menuOptions}
             />
           </MenuContainer>
           <BodyContainer>
             <BodyComponent />
           </BodyContainer>
-          <CloseBtnContainer onClick={handleClose}>
+          <CloseBtnContainer
+            className="t--close-git-sync-modal"
+            onClick={handleClose}
+          >
             <Icon
               fillColor={get(theme, "colors.gitSyncModal.closeIcon")}
               name="close-modal"
@@ -138,9 +162,9 @@ function GitSyncModal() {
             />
           </CloseBtnContainer>
         </Container>
-      </Dialog>
+      </StyledDialog>
       <GitErrorPopup />
-    </>
+    </GitSyncTabsContainer>
   );
 }
 

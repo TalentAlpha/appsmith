@@ -10,7 +10,7 @@ import { Organization, OrgUser } from "constants/orgConstants";
 import {
   createMessage,
   ERROR_MESSAGE_CREATE_APPLICATION,
-} from "constants/messages";
+} from "@appsmith/constants/messages";
 import { UpdateApplicationRequest } from "api/ApplicationApi";
 import { CreateApplicationFormValues } from "pages/Applications/helpers";
 import { AppLayoutConfig } from "reducers/entityReducers/pageListReducer";
@@ -104,7 +104,17 @@ const applicationsReducer = createReducer(initialState, {
       userOrgs: action.payload,
     };
   },
-
+  [ReduxActionTypes.DELETE_ORG_SUCCESS]: (
+    state: ApplicationsReduxState,
+    action: ReduxAction<string>,
+  ) => {
+    return {
+      ...state,
+      userOrgs: state.userOrgs.filter(
+        (org: Organization) => org.organization.id !== action.payload,
+      ),
+    };
+  },
   [ReduxActionTypes.FETCH_APPLICATION_INIT]: (
     state: ApplicationsReduxState,
   ) => ({ ...state, isFetchingApplication: true }),
@@ -398,6 +408,17 @@ const applicationsReducer = createReducer(initialState, {
       },
     };
   },
+  [ReduxActionTypes.INIT_SSH_KEY_PAIR_WITH_NULL]: (
+    state: ApplicationsReduxState,
+  ) => {
+    return {
+      ...state,
+      currentApplication: {
+        ...state.currentApplication,
+        SSHKeyPair: null,
+      },
+    };
+  },
   [ReduxActionTypes.GENERATE_SSH_KEY_PAIR_SUCCESS]: (
     state: ApplicationsReduxState,
     action: ReduxAction<GetSSHKeyResponseData>,
@@ -436,6 +457,15 @@ const applicationsReducer = createReducer(initialState, {
       },
     },
   }),
+  [ReduxActionTypes.IMPORT_TEMPLATE_TO_ORGANISATION_SUCCESS]: (
+    state: ApplicationsReduxState,
+    action: ReduxAction<ApplicationPayload>,
+  ) => {
+    return {
+      ...state,
+      applicationList: [...state.applicationList, action.payload],
+    };
+  },
 });
 
 export type creatingApplicationMap = Record<string, boolean>;

@@ -94,8 +94,6 @@ public class Application extends BaseDomain {
     public String getLastUpdateTime() {
         if(lastEditedAt != null) {
             return ISO_FORMATTER.format(lastEditedAt);
-        } else if (updatedAt != null) { // last edit is null, return updatedAt in this case
-            return ISO_FORMATTER.format(updatedAt);
         }
         return null;
     }
@@ -108,6 +106,23 @@ public class Application extends BaseDomain {
     }
 
     Boolean forkingEnabled;
+
+    // Field to convey if the application is updated by the user or modified by migration
+    @Transient
+    Boolean isManualUpdate;
+
+    // To convey current schema version for client and server. This will be used to check if we run the migration
+    // between 2 commits if the application is connected to git
+    @JsonIgnore
+    Integer clientSchemaVersion;
+    @JsonIgnore
+    Integer serverSchemaVersion;
+
+    @JsonIgnore
+    String publishedModeThemeId;
+
+    @JsonIgnore
+    String editModeThemeId;
 
     // This constructor is used during clone application. It only deeply copies selected fields. The rest are either
     // initialized newly or is left up to the calling function to set.
@@ -165,5 +180,4 @@ public class Application extends BaseDomain {
             FLUID,
         }
     }
-
 }
