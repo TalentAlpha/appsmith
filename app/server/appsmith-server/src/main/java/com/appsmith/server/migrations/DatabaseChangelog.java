@@ -1934,16 +1934,16 @@ public class DatabaseChangelog {
             if (action.getUnpublishedAction() != null
                     && action.getUnpublishedAction().getActionConfiguration() != null
                     && action.getUnpublishedAction().getActionConfiguration().getTimeoutInMillisecond() != null
-                    && action.getUnpublishedAction().getActionConfiguration().getTimeoutInMillisecond() > 60000) {
-                action.getUnpublishedAction().getActionConfiguration().setTimeoutInMillisecond("60000");
+                    && action.getUnpublishedAction().getActionConfiguration().getTimeoutInMillisecond() > 300000) {
+                action.getUnpublishedAction().getActionConfiguration().setTimeoutInMillisecond("300000");
                 updateTimeout = true;
             }
 
             if (action.getPublishedAction() != null
                     && action.getPublishedAction().getActionConfiguration() != null
                     && action.getPublishedAction().getActionConfiguration().getTimeoutInMillisecond() != null
-                    && action.getPublishedAction().getActionConfiguration().getTimeoutInMillisecond() > 60000) {
-                action.getPublishedAction().getActionConfiguration().setTimeoutInMillisecond("60000");
+                    && action.getPublishedAction().getActionConfiguration().getTimeoutInMillisecond() > 300000) {
+                action.getPublishedAction().getActionConfiguration().setTimeoutInMillisecond("300000");
                 updateTimeout = true;
             }
 
