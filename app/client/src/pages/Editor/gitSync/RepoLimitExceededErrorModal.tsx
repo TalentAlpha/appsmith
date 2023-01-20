@@ -12,7 +12,6 @@ import {
 } from "actions/gitSyncActions";
 import Button, { Category, Size } from "components/ads/Button";
 import styled, { useTheme } from "styled-components";
-import { MENU_HEIGHT } from "./constants";
 import Text, { TextType } from "components/ads/Text";
 import { Colors } from "constants/Colors";
 import {
@@ -55,7 +54,7 @@ const Container = styled.div`
 const BodyContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: calc(100% - ${MENU_HEIGHT}px);
+  height: calc(100% - 18px);
 `;
 
 const CloseBtnContainer = styled.div`
@@ -82,6 +81,22 @@ const StyledDialog = styled(Dialog)`
   && .bp3-dialog-body {
     margin-top: 0;
   }
+const AppListContainer = styled.div`
+  height: 160px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 72, 72, 0.5);
+    width: 4px;
+    border-radius: ${(props) => props.theme.radii[3]}px;
+  }
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  position: relative;
 `;
 
 function RepoLimitExceededErrorModal() {
@@ -239,38 +254,40 @@ function RepoLimitExceededErrorModal() {
               />
             </div>
           </InfoWrapper>
-          {applications.map((application: ApplicationPayload) => {
-            const { gitApplicationMetadata } = application;
-            return (
-              <ApplicationWrapper
-                className="t--connected-app-wrapper"
-                key={application.id}
-              >
-                <div>
-                  <TextWrapper>
-                    <Text color={Colors.OXFORD_BLUE} type={TextType.H4}>
-                      {application.name}
-                    </Text>
-                  </TextWrapper>
-                  <TextWrapper>
-                    <Text color={Colors.OXFORD_BLUE} type={TextType.P3}>
-                      {gitApplicationMetadata?.remoteUrl}
-                    </Text>
-                  </TextWrapper>
-                </div>
-                <Link
-                  className="t--disconnect-link"
-                  color={Colors.CRIMSON}
-                  hasIcon
-                  link=""
-                  onClick={() =>
-                    openDisconnectGitModal(application.id, application.name)
-                  }
-                  text={createMessage(REVOKE_ACCESS)}
-                />
-              </ApplicationWrapper>
-            );
-          })}
+          <AppListContainer>
+            {applications.map((application: ApplicationPayload) => {
+              const { gitApplicationMetadata } = application;
+              return (
+                <ApplicationWrapper
+                  className="t--connected-app-wrapper"
+                  key={application.id}
+                >
+                  <div>
+                    <TextWrapper>
+                      <Text color={Colors.OXFORD_BLUE} type={TextType.H4}>
+                        {application.name}
+                      </Text>
+                    </TextWrapper>
+                    <TextWrapper>
+                      <Text color={Colors.OXFORD_BLUE} type={TextType.P3}>
+                        {gitApplicationMetadata?.remoteUrl}
+                      </Text>
+                    </TextWrapper>
+                  </div>
+                  <Link
+                    className="t--disconnect-link"
+                    color={Colors.CRIMSON}
+                    hasIcon
+                    link=""
+                    onClick={() =>
+                      openDisconnectGitModal(application.id, application.name)
+                    }
+                    text={createMessage(DISCONNECT_GIT)}
+                  />
+                </ApplicationWrapper>
+              );
+            })}
+          </AppListContainer>
         </BodyContainer>
         <CloseBtnContainer onClick={onClose}>
           <Icon
