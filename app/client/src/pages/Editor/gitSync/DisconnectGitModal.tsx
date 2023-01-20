@@ -94,6 +94,11 @@ function DisconnectGitModal() {
       width={"550px"}
     >
       <Container>
+        <MenuContainer>
+          <Text color={Colors.GREY_8} type={TextType.P3}>
+            {createMessage(GIT_DISCONNECTION_SUBMENU)}
+          </Text>
+        </MenuContainer>
         <BodyContainer>
           <div>
             <Title style={{ marginTop: 0, marginBottom: "8px" }}>
